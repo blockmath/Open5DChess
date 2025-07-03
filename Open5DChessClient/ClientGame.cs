@@ -1,0 +1,88 @@
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using System;
+using System.Diagnostics;
+
+namespace ChessClient
+{
+    public class ClientGame : Game
+    {
+
+        const float SCROLL_SENSITIVITY = 1.0f / 2400.0f;
+
+        private GraphicsDeviceManager graphics;
+        private SpriteBatch spriteBatch;
+
+        Texture2D pieceTexture;
+        Vector3 cameraPosition = Vector3.Zero;
+
+        public ClientGame()
+        {
+            graphics = new GraphicsDeviceManager(this);
+            Content.RootDirectory = "Content";
+            IsMouseVisible = true;
+        }
+
+        protected override void Initialize()
+        {
+            // TODO: Add your initialization logic here
+
+            Window.AllowUserResizing = true;
+
+            GameStateRenderer.gameState = new ChessCommon.GameState();
+
+            base.Initialize();
+        }
+
+        protected override void LoadContent()
+        {
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            // TODO: use this.Content to load your game content here
+
+            GameStateRenderer.pieceTexture = Content.Load<Texture2D>("pieces");
+            GameStateRenderer.sq = Content.Load<Texture2D>("sq");
+        }
+
+        Vector3 mouse_position_previous = Vector3.Zero;
+
+        protected override void Update(GameTime gameTime)
+        {
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+                Exit();
+
+            // TODO: Add your update logic here
+
+            Vector3 mouse_position = new Vector3(Mouse.GetState().X, Mouse.GetState().Y, Mouse.GetState().ScrollWheelValue);
+
+            Vector3 mouse_delta = mouse_position - mouse_position_previous;
+
+            mouse_position_previous = mouse_position;
+
+            cameraPosition.Z += mouse_delta.Z * SCROLL_SENSITIVITY;
+
+            if (Mouse.GetState().MiddleButton == ButtonState.Pressed) {
+                cameraPosition.X -= mouse_delta.X / MathF.Pow(10, cameraPosition.Z);
+                cameraPosition.Y -= mouse_delta.Y / MathF.Pow(10, cameraPosition.Z);
+            }
+
+            base.Update(gameTime);
+        }
+
+        protected override void Draw(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.Lavender);
+
+            // TODO: Add your drawing code here
+
+            spriteBatch.Begin();
+
+            GameStateRenderer.Render(spriteBatch, cameraPosition, Window.ClientBounds.Size.ToVector2());
+
+            spriteBatch.End();
+
+            base.Draw(gameTime);
+        }
+    }
+}
