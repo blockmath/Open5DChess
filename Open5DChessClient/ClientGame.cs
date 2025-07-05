@@ -47,6 +47,10 @@ namespace ChessClient
 
         Vector3 mouse_position_previous = Vector3.Zero;
 
+        private bool IsPositionRendered(Point point) {
+            return point.X >= 0 && point.X <= Window.ClientBounds.Width && point.Y >= 0 && point.Y <= Window.ClientBounds.Height;
+        }
+
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
@@ -60,11 +64,15 @@ namespace ChessClient
 
             mouse_position_previous = mouse_position;
 
-            cameraPosition.Z += mouse_delta.Z * SCROLL_SENSITIVITY;
+            if (IsPositionRendered(Mouse.GetState().Position)) {
 
-            if (Mouse.GetState().MiddleButton == ButtonState.Pressed) {
-                cameraPosition.X -= mouse_delta.X / MathF.Pow(10, cameraPosition.Z);
-                cameraPosition.Y -= mouse_delta.Y / MathF.Pow(10, cameraPosition.Z);
+                cameraPosition.Z += mouse_delta.Z * SCROLL_SENSITIVITY;
+
+                if (Mouse.GetState().MiddleButton == ButtonState.Pressed) {
+                    cameraPosition.X += mouse_delta.X / MathF.Pow(10, cameraPosition.Z);
+                    cameraPosition.Y += mouse_delta.Y / MathF.Pow(10, cameraPosition.Z);
+                }
+
             }
 
             base.Update(gameTime);
@@ -76,7 +84,7 @@ namespace ChessClient
 
             // TODO: Add your drawing code here
 
-            spriteBatch.Begin();
+            spriteBatch.Begin(transformMatrix: Matrix.CreateTranslation(cameraPosition * new Vector3(1, 1, 0)) * Matrix.CreateScale(MathF.Pow(10, cameraPosition.Z)) * Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2() / 2, 0)));
 
             GameStateRenderer.Render(spriteBatch, cameraPosition, Window.ClientBounds.Size.ToVector2());
 

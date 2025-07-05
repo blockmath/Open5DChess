@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 namespace ChessCommon {
     public class Board {
 
-        public static readonly string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
+        public static readonly string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
         public Vector2i TL;
+
+        public Vector2i parentTLVis;
 
         public int pL;
 
@@ -22,6 +24,8 @@ namespace ChessCommon {
 
         public Vector2i epTarget;
 
+        public Vector2i moveFrom = null, moveTo = null, moveTravel = null;
+
         public Vector2i TLVis => TLVisImpl(TL, turn);
 
         public static Vector2i TLVisImpl(Vector2i TL, GameColour turn) => new Vector2i(TL.X * 2 + (turn.isBlack() ? 1 : 0), TL.Y);
@@ -31,6 +35,7 @@ namespace ChessCommon {
             this.TL = TL;
             turn = colour;
             pL = 0;
+            parentTLVis = null;
         }
 
         public Board(Vector2i TL, string fen = null) {
@@ -38,20 +43,21 @@ namespace ChessCommon {
 
             this.TL = TL;
             pL = TL.Y;
+            parentTLVis = null;
 
             LoadFen(fen);
         }
 
         public Board(Board source, Piece piece, Vector2i from, Vector2i to) {
-            RemovePiece(from);
-            init(source.TL.Y, source, piece, to);
+            init(source.TL.Y, source, piece, to, from);
         }
 
         public Board(int l, Board source, Piece piece, Vector2i to) {
-            init(l, source, piece, to);
+            init(l, source, piece, to, null);
         }
 
-        private void init(int l, Board source, Piece piece, Vector2i to) {
+        private void init(int l, Board source, Piece piece, Vector2i to, Vector2i from) {
+            parentTLVis = source.TLVis;
             TL = new Vector2i(source.TL.X, l);
             turn = (GameColour)(-(int)source.turn);
             if (turn.isWhite()) {
@@ -60,12 +66,16 @@ namespace ChessCommon {
             pL = source.TL.Y;
 
             Array.Copy(source.pieces, pieces, 64);
+            RemovePiece(from);
             PlacePiece(piece, to);
         }
 
         public void RemovePiece(Vector2i from) {
-            Debug.WriteLine(from);
-            pieces[from.X - 1, from.Y - 1] = Piece.NONE;
+            if (from is null) {
+                return;
+            } else {
+                pieces[from.X - 1, from.Y - 1] = Piece.NONE;
+            }
         }
 
         public void PlacePiece(Piece piece, Vector2i to) {

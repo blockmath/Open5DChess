@@ -13,6 +13,9 @@ namespace ChessCommon {
             moveStack = new Stack<IMove>();
             boards = new Dictionary<Vector2i, Board> { { new Vector2i(0, 0), new Board(new Vector2i(0, 0)) } };
             MakeMove(new Move(new Vector4i(5, 7, 0, 0), new Vector4i(5, 5, 0, 0), GameColour.WHITE));
+            MakeMove(new Move(new Vector4i(5, 2, 0, 0), new Vector4i(5, 4, 0, 0), GameColour.BLACK));
+            MakeMove(new Move(new Vector4i(7, 8, 1, 0), new Vector4i(7, 6, 0, 0), GameColour.WHITE));
+            MakeMove(new Move(new Vector4i(7, 1, 0, 1), new Vector4i(7, 3, 0, 0), GameColour.BLACK));
         }
 
         public GameState(GameState o) {
@@ -54,7 +57,6 @@ namespace ChessCommon {
         }
 
         public bool BoardExists(Vector2i TL, GameColour colour) {
-            Debug.WriteLine(Board.TLVisImpl(TL, colour));
             return boards.ContainsKey(Board.TLVisImpl(TL, colour));
         }
 
@@ -95,6 +97,11 @@ namespace ChessCommon {
             return boards[TLVis];
         }
 
+        public Board GetBoardVis(Vector2i TLVis) {
+            if (TLVis is null) { return null; }
+            return boards[TLVis];
+        }
+
         public void MakeMove(Move move) {
             if (!BoardExists(move.origin.TL, move.colour)) {
                 throw new Exception("Error: origin board does not exist");
@@ -127,6 +134,9 @@ namespace ChessCommon {
                 }
                 imove.captured = moveBoard.GetPiece(imove.capture_target);
 
+                newBoard.moveFrom = move.origin.XY;
+                newBoard.moveTo = move.target.XY;
+
                 boards.Add(newBoard.TLVis, newBoard);
                 moveStack.Push(imove);
             } else if (BoardIsPlayable(move.target.TL, move.colour)) {
@@ -150,6 +160,9 @@ namespace ChessCommon {
                     imove.capture_target.Y += offset;
                 }
                 imove.captured = toBoard.GetPiece(imove.capture_target);
+
+                newFromBoard.moveTravel = move.origin.XY;
+                newToBoard.moveTravel = move.target.XY;
 
                 boards.Add(newFromBoard.TLVis, newFromBoard);
                 boards.Add(newToBoard.TLVis, newToBoard);
@@ -183,6 +196,9 @@ namespace ChessCommon {
                     imove.capture_target.Y += offset;
                 }
                 imove.captured = toBoard.GetPiece(imove.capture_target);
+
+                newFromBoard.moveTravel = move.origin.XY;
+                newToBoard.moveTravel = move.target.XY;
 
                 boards.Add(newFromBoard.TLVis, newFromBoard);
                 boards.Add(newToBoard.TLVis, newToBoard);
