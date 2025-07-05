@@ -1,3 +1,4 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"C:/Users/devin/Open5DChess/Open5DChessClient/Content/pieces.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/pieces.xnb","TextureProcessor","Texture2DContent",262765,25165909,0.3773123
-"C:/Users/devin/Open5DChess/Open5DChessClient/Content/sq.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/sq.xnb","TextureProcessor","Texture2DContent",72,89,0.0015128
+"C:/Users/devin/Open5DChess/Open5DChessClient/Content/arrow.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/arrow.xnb","TextureProcessor","Texture2DContent",8468,1048661,0.5359487
+"C:/Users/devin/Open5DChess/Open5DChessClient/Content/pieces.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/pieces.xnb","TextureProcessor","Texture2DContent",262765,25165909,0.4145126
+"C:/Users/devin/Open5DChess/Open5DChessClient/Content/sq.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/sq.xnb","TextureProcessor","Texture2DContent",72,89,0.0015817

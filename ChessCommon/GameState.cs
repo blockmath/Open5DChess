@@ -51,7 +51,11 @@ namespace ChessCommon {
         private int maxTL;
 
         private Stack<IMove> moveStack;
-
+        public List<IMove> GetMoves() {
+            List<IMove> ms = moveStack.ToList();
+            ms.Reverse();
+            return ms;
+        }
         public bool TimelineIsActive(int l) {
             return minATL <= l && l <= maxATL;
         }
@@ -206,8 +210,8 @@ namespace ChessCommon {
             }
         }
 
-        public void UnmakeMove(Move move) {
-            if (move != moveStack.First()) {
+        public void UnmakeMove(Move move = null) {
+            if (!(move is null) && move != moveStack.First()) {
                 throw new Exception("Error: Attempting to unmake a move that's not at the top of the stack");
             }
 

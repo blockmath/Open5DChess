@@ -43,6 +43,7 @@ namespace ChessClient
 
             GameStateRenderer.pieceTexture = Content.Load<Texture2D>("pieces");
             GameStateRenderer.sq = Content.Load<Texture2D>("sq");
+            GameStateRenderer.arsq = Content.Load<Texture2D>("arrow");
         }
 
         Vector3 mouse_position_previous = Vector3.Zero;

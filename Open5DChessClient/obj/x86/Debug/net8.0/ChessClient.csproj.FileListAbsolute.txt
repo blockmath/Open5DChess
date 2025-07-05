@@ -34,3 +34,5 @@ C:\Users\devin\Open5DChess\Open5DChessClient\obj\x86\Debug\net8.0\refint\ChessCl
 C:\Users\devin\Open5DChess\Open5DChessClient\obj\x86\Debug\net8.0\ChessClient.pdb
 C:\Users\devin\Open5DChess\Open5DChessClient\obj\x86\Debug\net8.0\ChessClient.genruntimeconfig.cache
 C:\Users\devin\Open5DChess\Open5DChessClient\obj\x86\Debug\net8.0\ref\ChessClient.dll
+C:\Users\devin\Open5DChess\Open5DChessClient\obj\x86\Debug\net8.0\ChessClient.sourcelink.json
+C:\Users\devin\Open5DChess\Open5DChessClient\bin\x86\Debug\net8.0\Content\arrow.xnb

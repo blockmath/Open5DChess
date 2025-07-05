@@ -171,6 +171,9 @@ namespace ChessCommon {
         public readonly Vector4i target;
         public readonly GameColour colour;
 
+        public Vector4i originV => new Vector4i(origin.XY, Board.TLVisImpl(origin.TL, colour));
+        public Vector4i targetV => new Vector4i(target.XY, Board.TLVisImpl(target.TL, colour));
+
         public Move(Vector4i origin, Vector4i target, GameColour colour) {
             this.origin = origin;
             this.target = target;
