@@ -5,10 +5,12 @@
   <Config />
   <SourceFiles>
     <File>C:/Users/devin/Open5DChess/Open5DChessClient/Content/arrow.png</File>
+    <File>C:/Users/devin/Open5DChess/Open5DChessClient/Content/msaa.fx</File>
     <File>C:/Users/devin/Open5DChess/Open5DChessClient/Content/pieces.png</File>
     <File>C:/Users/devin/Open5DChess/Open5DChessClient/Content/sq.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

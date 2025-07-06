@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using ChessCommon;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -14,8 +15,13 @@ namespace ChessClient
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
 
+        private Effect msaa;
+
         Texture2D pieceTexture;
         Vector3 cameraPosition = Vector3.Zero;
+
+        Matrix CamMatrix => Matrix.CreateTranslation(cameraPosition * new Vector3(1, 1, 0)) * Matrix.CreateScale(MathF.Pow(10, cameraPosition.Z)) * Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2() / 2, 0));
+        Matrix CamMatrixInv => Matrix.Invert(CamMatrix);
 
         public ClientGame()
         {
@@ -44,6 +50,7 @@ namespace ChessClient
             GameStateRenderer.pieceTexture = Content.Load<Texture2D>("pieces");
             GameStateRenderer.sq = Content.Load<Texture2D>("sq");
             GameStateRenderer.arsq = Content.Load<Texture2D>("arrow");
+            msaa = Content.Load<Effect>("msaa");
         }
 
         Vector3 mouse_position_previous = Vector3.Zero;
@@ -54,8 +61,8 @@ namespace ChessClient
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
+            //if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            //    Exit();
 
             // TODO: Add your update logic here
 
@@ -85,7 +92,14 @@ namespace ChessClient
 
             // TODO: Add your drawing code here
 
-            spriteBatch.Begin(transformMatrix: Matrix.CreateTranslation(cameraPosition * new Vector3(1, 1, 0)) * Matrix.CreateScale(MathF.Pow(10, cameraPosition.Z)) * Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2() / 2, 0)));
+            spriteBatch.Begin(
+                transformMatrix: CamMatrix,
+                samplerState: SamplerState.PointClamp,
+                effect: msaa,
+                blendState: null
+            );
+            Vector2 mpos = Mouse.GetState().Position.ToVector2();
+            GameStateRenderer.ws_mpos = Vector2.Transform(mpos, CamMatrixInv);
 
             GameStateRenderer.Render(spriteBatch, cameraPosition, Window.ClientBounds.Size.ToVector2());
 

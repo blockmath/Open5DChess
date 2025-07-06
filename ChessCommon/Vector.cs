@@ -115,7 +115,7 @@ namespace ChessCommon {
         }
 
         public static bool operator ==(Vector4i a, Vector4i b) {
-            return a.X == b.X && a.Y == b.Y;
+            return a.X == b.X && a.Y == b.Y && a.T == b.T && a.L == b.L;
         }
 
         public static bool operator !=(Vector4i a, Vector4i b) {

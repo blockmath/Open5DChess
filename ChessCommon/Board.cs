@@ -83,7 +83,7 @@ namespace ChessCommon {
                 return;
             } else {
                 pieces[to.X - 1, to.Y - 1] = piece;
-                if (to == epTarget) {
+                if (to == epTarget && ((piece & Piece.MASK_KIND) == Piece.PIECE_PAWN)) {
                     int offset = (int)piece.getColour();
                     pieces[to.X - 1, to.Y - 1 + offset] = Piece.NONE;
                 }

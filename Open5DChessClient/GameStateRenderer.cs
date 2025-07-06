@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,8 +16,13 @@ namespace ChessClient {
 
         public static GameState gameState;
 
+        public static Vector2 ws_mpos;
+        private static Vector2i ws_mposi;
+
         public static readonly Vector4i DESELECTED = new Vector4i(int.MinValue, int.MinValue, int.MinValue, int.MinValue);
         public static Vector4i selected = new Vector4i(DESELECTED);
+        public static Vector4i hovered = new Vector4i(DESELECTED);
+        public static List<Vector4i> highlighted = new List<Vector4i>();
 
 
         public static Texture2D pieceTexture;
@@ -37,16 +43,25 @@ namespace ChessClient {
         private static readonly Color WHITE_BOARD_COLOUR = Color.White;
         private static readonly Color BLACK_BOARD_COLOUR = Color.Black;
 
+        private static readonly Color WHITE_BOARD_COLOUR_SHADED_A = Color.White;
+        private static readonly Color BLACK_BOARD_COLOUR_SHADED_A = Color.Black;
+
+        private static readonly Color WHITE_BOARD_COLOUR_SHADED_B = Color.LightGray;
+        private static readonly Color BLACK_BOARD_COLOUR_SHADED_B = Color.DarkGray;
+
         private static readonly Color TL_COLOUR_A = Color.MediumPurple;
         private static readonly Color TL_COLOUR_B = Color.MultiplyAlpha(Color.Multiply(Color.MediumPurple, 0.8f), 2.0f);
 
         private static readonly Color HIGHLIGHT_COLOUR_MOVED = Color.MultiplyAlpha(Color.Yellow, 0.5f);
         private static readonly Color HIGHLIGHT_COLOUR_TRAVELLED = Color.MultiplyAlpha(Color.MediumPurple, 0.8f);
-        private static readonly Color HIGHLIGHT_COLOUR_SELECTED = Color.LimeGreen;
 
         private static readonly Color TRAVEL_COLOUR = Color.MultiplyAlpha(Color.MediumPurple, 1f);
         private static readonly Color TRAVEL_COLOUR_WHITE = Color.MultiplyAlpha(Color.White, 1f);
         private static readonly Color TRAVEL_COLOUR_BLACK = Color.MultiplyAlpha(Color.Black, 1f);
+
+        private static readonly Color SELECTED_COLOUR = Color.MultiplyAlpha(Color.LimeGreen, 0.25f);
+        private static readonly Color HIGHLIGHTED_COLOUR = Color.MultiplyAlpha(Color.LightGreen, 0.25f);
+        private static readonly Color HOVERED_COLOUR = Color.MultiplyAlpha(Color.Lime, 0.25f);
 
         private static Vector2 BoardDrawPos(Vector2i TLVis) {
             return new Vector2(TLVis.X * PIECE_SIZE.X * BOARD_OFFSET.X, TLVis.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y);
@@ -188,6 +203,15 @@ namespace ChessClient {
             UDrawTriSegment(points[points.Count - 1], 2 * points[points.Count - 1] - points[points.Count - 2], TRAVEL_COLOUR, (int)(PIECE_SIZE.Y * 0.5));
         }
 
+        public static void RenderThePresent() {
+            float presentPos = gameState.GetPresentPly() * PIECE_SIZE.X * BOARD_OFFSET.X;
+
+            Color presentColour = gameState.GetPresentColour().isWhite() ? WHITE_BOARD_COLOUR_SHADED_A : BLACK_BOARD_COLOUR_SHADED_A;
+            Color presentColourShaded = gameState.GetPresentColour().isWhite() ? WHITE_BOARD_COLOUR_SHADED_B : BLACK_BOARD_COLOUR_SHADED_B;
+
+            spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 3)), (int)(-32000 * PIECE_SIZE.Y), (int)(PIECE_SIZE.X * 6), (int)(64000 * PIECE_SIZE.Y)), presentColourShaded);
+            spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 2.5)), (int)(-32000 * PIECE_SIZE.Y), (int)(PIECE_SIZE.X * 5), (int)(64000 * PIECE_SIZE.Y)), presentColour);
+        }
         public static void RenderBoard(Board board) {
             float borderWidth = gameState.BoardIsPlayable(board.TL, board.turn) ? 0.5f : 0.125f;
             spriteBatch.Draw(sq, new Rectangle(
@@ -206,28 +230,49 @@ namespace ChessClient {
                         (int)(PIECE_SIZE.Y));
                     spriteBatch.Draw(sq, targetRect, (i + j) % 2 == 0 ? LIGHT_SQUARE_COLOUR : DARK_SQUARE_COLOUR);
                     Vector2i xy = new Vector2i(i + 1, j + 1);
-                    if (board.TLVis == selected.TL && xy == selected.XY) {
-                        spriteBatch.Draw(sq, targetRect, HIGHLIGHT_COLOUR_SELECTED);
+                    Vector4i xytl = new Vector4i(xy, board.TLVis);
+
+                    Vector2i xypos = new Vector2i(
+                        (int)(board.TLVis.X * BOARD_OFFSET.X - BOARD_SIZE.X / 2 + i),
+                        (int)(board.TLVis.Y * BOARD_OFFSET.Y - BOARD_SIZE.Y / 2 + j));
+
+                    if (xypos == ws_mposi) {
+                        hovered = xytl;
+                    }
+
+                    if (xytl == selected) {
+                        spriteBatch.Draw(sq, targetRect, SELECTED_COLOUR);
+                    } else if (highlighted.Contains(xytl)) {
+                        spriteBatch.Draw(sq, targetRect, HIGHLIGHTED_COLOUR);
                     } else if (xy == board.moveFrom || xy == board.moveTo) {
                         spriteBatch.Draw(sq, targetRect, HIGHLIGHT_COLOUR_MOVED);
                     } else if (xy == board.moveTravel) {
                         spriteBatch.Draw(sq, targetRect, HIGHLIGHT_COLOUR_TRAVELLED);
                     }
+
+                    if (xytl == hovered) {
+                        spriteBatch.Draw(sq, targetRect, HOVERED_COLOUR);
+                    }
+
+
                     int id = Methods.GetPieceID(board.GetPiece(xy));
                     // Draw piece after square
-                    PieceDraw(new Vector2i(
-                        (int)(board.TLVis.X * BOARD_OFFSET.X - BOARD_SIZE.X / 2 + i),
-                        (int)(board.TLVis.Y * BOARD_OFFSET.Y - BOARD_SIZE.Y / 2 + j)),
-                        id
-                    );
+                    PieceDraw(xypos, id);
                 }
             }
         }
 
+
+        // Note: Checking `hovered` (for interactions like clicking) should be done outside of this function,
+        // because this function also does double duty of figuring out what square is hovered in the first place!
         public static void Render(SpriteBatch batch, Vector3 cameraPosition, Vector2 windowSize) {
             spriteBatch = batch;
 
-            // Todo: render the Present
+            ws_mposi = new Vector2i((int)MathF.Floor(ws_mpos.X / PIECE_SIZE.X), (int)MathF.Floor(ws_mpos.Y / PIECE_SIZE.Y));
+
+            hovered = new Vector4i(DESELECTED);
+
+            RenderThePresent();
 
             foreach (Board board in gameState.GetMoveableBoards()) {
                 RenderTimelineGizmo(board.TLVis);
