@@ -59,6 +59,16 @@ namespace ChessCommon {
     }
 
     public static class Methods {
+
+
+        public static int TVis(int T, GameColour colour) {
+            return (T * 2 + (colour.isBlack() ? 1 : 0));
+        }
+
+        public static int TVis(Vector2iTL TL) => TVis(TL.X, TL.colour);
+
+        public static int TVis(Vector4iTL v) => TVis(v.TL);
+
         public static Piece FromChar(char c) {
             Piece p = Piece.NONE;
             switch (c) {
@@ -156,6 +166,9 @@ namespace ChessCommon {
         public static bool isBlack(this GameColour colour) => colour == GameColour.BLACK;
 
         public static GameColour getColour(this Piece piece) {
+            if (piece == Piece.NONE) return 0;
+
+
             if ((piece & Piece.MASK_COLOUR) == Piece.COLOUR_WHITE) {
                 return GameColour.WHITE;
             } else {
@@ -167,17 +180,16 @@ namespace ChessCommon {
 
 
     public class Move {
-        public readonly Vector4i origin;
-        public readonly Vector4i target;
-        public readonly GameColour colour;
+        public readonly Vector4iTL origin;
+        public readonly Vector4iTL target;
 
-        public Vector4i originV => new Vector4i(origin.XY, Board.TLVisImpl(origin.TL, colour));
-        public Vector4i targetV => new Vector4i(target.XY, Board.TLVisImpl(target.TL, colour));
-
-        public Move(Vector4i origin, Vector4i target, GameColour colour) {
+        public Move(Vector4iTL origin, Vector4iTL target) {
             this.origin = origin;
             this.target = target;
-            this.colour = colour;
+        }
+
+        public GameColour getColour() {
+            return origin.colour;
         }
 
         public static bool operator ==(Move a, Move b) {
@@ -191,24 +203,22 @@ namespace ChessCommon {
         public override bool Equals(object obj) {
             return obj is Move move &&
                    origin == move.origin &&
-                   target == move.target &&
-                   colour == move.colour;
+                   target == move.target;
         }
 
         public override int GetHashCode() {
             int hashCode = -447757500;
-            hashCode = hashCode * -1521134295 + EqualityComparer<Vector4i>.Default.GetHashCode(origin);
-            hashCode = hashCode * -1521134295 + EqualityComparer<Vector4i>.Default.GetHashCode(target);
-            hashCode = hashCode * -1521134295 + colour.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector4iTL>.Default.GetHashCode(origin);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector4iTL>.Default.GetHashCode(target);
             return hashCode;
         }
     }
 
     public class IMove : Move {
-        public IMove(Vector4i origin, Vector4i target, GameColour colour) : base(origin, target, colour) { }
+        public IMove(Vector4iTL origin, Vector4iTL target) : base(origin, target) { }
 
-        public Vector2i target_child;
-        public Vector2i origin_child;
+        public Vector2iTL target_child;
+        public Vector2iTL origin_child;
         public Piece captured;
         public Vector2i capture_target;
     }

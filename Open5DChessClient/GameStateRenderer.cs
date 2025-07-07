@@ -19,18 +19,15 @@ namespace ChessClient {
         public static Vector2 ws_mpos;
         private static Vector2i ws_mposi;
 
-        public static readonly Vector4i DESELECTED = new Vector4i(int.MinValue, int.MinValue, int.MinValue, int.MinValue);
-        public static Vector4i selected = new Vector4i(DESELECTED);
-        public static Vector4i hovered = new Vector4i(DESELECTED);
-        public static List<Vector4i> highlighted = new List<Vector4i>();
+        public static Vector4iTL selected = null;
+        public static Vector4iTL hovered = null;
+        public static List<Vector4iTL> highlighted = new List<Vector4iTL>();
 
 
         public static Texture2D pieceTexture;
         public static Texture2D sq;
         public static Texture2D arsq;
 
-        private static Func<Vector2, Vector2> scaleScalar = (Vector2 input) => input;
-        private static Func<Vector2, Vector2> positionScalar = (Vector2 input) => input;
         private static SpriteBatch spriteBatch;
 
         private static readonly Vector2 PIECE_SIZE = new Vector2(32);
@@ -63,8 +60,8 @@ namespace ChessClient {
         private static readonly Color HIGHLIGHTED_COLOUR = Color.MultiplyAlpha(Color.LightGreen, 0.25f);
         private static readonly Color HOVERED_COLOUR = Color.MultiplyAlpha(Color.Lime, 0.25f);
 
-        private static Vector2 BoardDrawPos(Vector2i TLVis) {
-            return new Vector2(TLVis.X * PIECE_SIZE.X * BOARD_OFFSET.X, TLVis.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y);
+        private static Vector2 BoardDrawPos(Vector2iTL TL) {
+            return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * BOARD_OFFSET.X, TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y);
         }
 
         private static void PieceDraw(Vector2i pos, int id) {
@@ -136,27 +133,32 @@ namespace ChessClient {
             return samples;
         }
 
-        public static void RenderTimelineGizmo(Vector2i headTL) {
+        // Render a gizmo for the timelines (connecting boards to their parents and children)
+        // For full compatibility, this should also take into account whether the timeline is inactive
+        // and turn white or black if it is (this isn't implemented yet)
+        public static void RenderTimelineGizmo(Vector2iTL headTL) {
+            // Get the basic path points (where the boards are)
             List<Vector2> points = new List<Vector2>();
 
-            Board b = gameState.GetBoardVis(headTL);
+            Board b = gameState.GetBoard(headTL);
 
             int initL = headTL.Y;
 
             while (b.TL.X >= 0) {
-                points.Add(BoardDrawPos(b.TLVis));
+                points.Add(BoardDrawPos(b.TL));
 
-                b = gameState.GetBoardVis(b.parentTLVis);
+                b = gameState.GetBoard(b.parentTL);
 
                 if (b is null || b.TL.Y != initL) {
                     break;
                 }
             }
 
-            if (!(b is null)) {
-                points.Add(BoardDrawPos(b.TLVis));
+            if (b is not null) {
+                points.Add(BoardDrawPos(b.TL));
             }
 
+            // Generate and sample a bezier curve through the boards. The control points are all assumed to be horizontal and a constant distance from the controllee.
             List<Vector2> bezierPoints = GenerateHorizontalBezier(points, 256, 1.5f * PIECE_SIZE.X * BOARD_SIZE.X);
 
             for (int i = 0; i < bezierPoints.Count - 1; ++i) {
@@ -166,16 +168,20 @@ namespace ChessClient {
                 UDrawLineSegment(bezierPoints[i], bezierPoints[i + 1], TL_COLOUR_A, (int)(PIECE_SIZE.Y * 1.5));
             }
         }
-
+        
+        // Rotate vectors clockwise/counterclockwise
         private static Vector2 RCW(Vector2 i) => new Vector2(i.Y, -i.X);
         private static Vector2 RCCW(Vector2 i) => -RCW(i);
 
+        // Rotate depending on colour
         private static Vector2 RDOC(Vector2 i, GameColour colour) => (colour.isWhite()) ? RCW(i) : RCCW(i);
 
-        public static void RenderTravelGizmo(Vector4i tailVPos, Vector4i headVPos, GameColour colour) {
+        public static void RenderTravelGizmo(Vector4iTL tailVPos, Vector4iTL headVPos) {
 
-            Vector2 tp0 = new Vector2(tailVPos.T * PIECE_SIZE.X * BOARD_OFFSET.X + (tailVPos.X - 4.5f) * PIECE_SIZE.X, tailVPos.L * PIECE_SIZE.Y * BOARD_OFFSET.Y + (tailVPos.Y - 4.5f) * PIECE_SIZE.Y);
-            Vector2 tp3 = new Vector2(headVPos.T * PIECE_SIZE.X * BOARD_OFFSET.X + (headVPos.X - 4.5f) * PIECE_SIZE.X, headVPos.L * PIECE_SIZE.Y * BOARD_OFFSET.Y + (headVPos.Y - 4.5f) * PIECE_SIZE.Y);
+            GameColour colour = tailVPos.colour;
+
+            Vector2 tp0 = new Vector2(Methods.TVis(tailVPos) * PIECE_SIZE.X * BOARD_OFFSET.X + (tailVPos.X - 4.5f) * PIECE_SIZE.X, tailVPos.L * PIECE_SIZE.Y * BOARD_OFFSET.Y + (tailVPos.Y - 4.5f) * PIECE_SIZE.Y);
+            Vector2 tp3 = new Vector2(Methods.TVis(headVPos) * PIECE_SIZE.X * BOARD_OFFSET.X + (headVPos.X - 4.5f) * PIECE_SIZE.X, headVPos.L * PIECE_SIZE.Y * BOARD_OFFSET.Y + (headVPos.Y - 4.5f) * PIECE_SIZE.Y);
 
             Vector2 tdp = tp3 - tp0;
             tdp.Normalize();
@@ -203,6 +209,8 @@ namespace ChessClient {
             UDrawTriSegment(points[points.Count - 1], 2 * points[points.Count - 1] - points[points.Count - 2], TRAVEL_COLOUR, (int)(PIECE_SIZE.Y * 0.5));
         }
 
+        // Render a gizmo for the big bar that shows the Present (the time of the earliest active playable board)
+        // If you make more than 32000 timelines in one direction and run out of bar that's on you
         public static void RenderThePresent() {
             float presentPos = gameState.GetPresentPly() * PIECE_SIZE.X * BOARD_OFFSET.X;
 
@@ -212,34 +220,41 @@ namespace ChessClient {
             spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 3)), (int)(-32000 * PIECE_SIZE.Y), (int)(PIECE_SIZE.X * 6), (int)(64000 * PIECE_SIZE.Y)), presentColourShaded);
             spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 2.5)), (int)(-32000 * PIECE_SIZE.Y), (int)(PIECE_SIZE.X * 5), (int)(64000 * PIECE_SIZE.Y)), presentColour);
         }
+
+        // Render a single board, including the border (showing whether it's playable, whose turn it is, etc.)
         public static void RenderBoard(Board board) {
-            float borderWidth = gameState.BoardIsPlayable(board.TL, board.turn) ? 0.5f : 0.125f;
+            float borderWidth = gameState.BoardIsPlayable(board.TL) ? 0.5f : 0.125f;
             spriteBatch.Draw(sq, new Rectangle(
-                (int)(board.TLVis.X * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * (BOARD_SIZE.X / 2 + borderWidth)),
-                (int)(board.TLVis.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth)),
+                (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * (BOARD_SIZE.X / 2 + borderWidth)),
+                (int)(board.TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth)),
                 (int)(PIECE_SIZE.X * (BOARD_SIZE.X + 2 * borderWidth)),
                 (int)(PIECE_SIZE.Y * (BOARD_SIZE.Y + 2 * borderWidth))),
-                board.turn.isWhite() ? WHITE_BOARD_COLOUR : BLACK_BOARD_COLOUR
+                board.TL.colour.isWhite() ? WHITE_BOARD_COLOUR : BLACK_BOARD_COLOUR
             );
             for (int i = 0; i < BOARD_SIZE.X; i++) {
                 for (int j = 0; j < BOARD_SIZE.Y; j++) {
+
+                    // Draw the actual square on the board first
                     Rectangle targetRect = new Rectangle(
-                        (int)(board.TLVis.X * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * (BOARD_SIZE.X / 2 - i)),
-                        (int)(board.TLVis.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 - j)),
+                        (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * (BOARD_SIZE.X / 2 - i)),
+                        (int)(board.TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 - j)),
                         (int)(PIECE_SIZE.X),
                         (int)(PIECE_SIZE.Y));
                     spriteBatch.Draw(sq, targetRect, (i + j) % 2 == 0 ? LIGHT_SQUARE_COLOUR : DARK_SQUARE_COLOUR);
+
+
                     Vector2i xy = new Vector2i(i + 1, j + 1);
-                    Vector4i xytl = new Vector4i(xy, board.TLVis);
+                    Vector4iTL xytl = new Vector4iTL(xy, board.TL);
 
                     Vector2i xypos = new Vector2i(
-                        (int)(board.TLVis.X * BOARD_OFFSET.X - BOARD_SIZE.X / 2 + i),
-                        (int)(board.TLVis.Y * BOARD_OFFSET.Y - BOARD_SIZE.Y / 2 + j));
+                        (int)(Methods.TVis(board.TL) * BOARD_OFFSET.X - BOARD_SIZE.X / 2 + i),
+                        (int)(board.TL.Y * BOARD_OFFSET.Y - BOARD_SIZE.Y / 2 + j));
 
                     if (xypos == ws_mposi) {
                         hovered = xytl;
                     }
 
+                    // Draw overlays for a piece having moved/travelled, if a square is hovered/selected/highlighted, etc.
                     if (xytl == selected) {
                         spriteBatch.Draw(sq, targetRect, SELECTED_COLOUR);
                     } else if (highlighted.Contains(xytl)) {
@@ -254,7 +269,6 @@ namespace ChessClient {
                         spriteBatch.Draw(sq, targetRect, HOVERED_COLOUR);
                     }
 
-
                     int id = Methods.GetPieceID(board.GetPiece(xy));
                     // Draw piece after square
                     PieceDraw(xypos, id);
@@ -263,32 +277,53 @@ namespace ChessClient {
         }
 
 
+        public static void AttemptSelection() {
+            if (hovered is null) {
+                return;
+            }
+            Board board = gameState.GetBoard(hovered.TL);
+
+            if (board is not null) {
+                
+            }
+        }
+
+
         // Note: Checking `hovered` (for interactions like clicking) should be done outside of this function,
         // because this function also does double duty of figuring out what square is hovered in the first place!
         public static void Render(SpriteBatch batch, Vector3 cameraPosition, Vector2 windowSize) {
-            spriteBatch = batch;
 
-            ws_mposi = new Vector2i((int)MathF.Floor(ws_mpos.X / PIECE_SIZE.X), (int)MathF.Floor(ws_mpos.Y / PIECE_SIZE.Y));
+            try {
 
-            hovered = new Vector4i(DESELECTED);
+                // Store the batch temporarily in a static field so it can be accessed in subroutines without having to pass it around everywhere
+                spriteBatch = batch;
 
-            RenderThePresent();
+                // Update the mouse's position (in piece tiles), clear `hovered` (the mouse may have moved)
+                ws_mposi = new Vector2i((int)MathF.Floor(ws_mpos.X / PIECE_SIZE.X), (int)MathF.Floor(ws_mpos.Y / PIECE_SIZE.Y));
 
-            foreach (Board board in gameState.GetMoveableBoards()) {
-                RenderTimelineGizmo(board.TLVis);
-            }
+                hovered = null;
 
-            foreach (Board board in gameState.boards.Values) {
-                RenderBoard(board);
-            }
+                // Render all the gizmos and boards in depth order
+                RenderThePresent();
 
-            foreach (IMove move in gameState.GetMoves()) {
-                if (move.origin.TL != move.target.TL) {
-                    RenderTravelGizmo(move.originV, move.targetV, move.colour);
+                foreach (Board board in gameState.GetMoveableBoards()) {
+                    RenderTimelineGizmo(board.TL);
                 }
-            }
 
-            spriteBatch = null;
+                foreach (Board board in gameState.boards.Values) {
+                    RenderBoard(board);
+                }
+
+                foreach (IMove move in gameState.GetMoves()) {
+                    if (move.origin.TL != move.target.TL) {
+                        RenderTravelGizmo(move.origin, move.target);
+                    }
+                }
+
+            } finally {
+                // The batch is obviously only accessible *while* we're rendering, not in other calls.
+                spriteBatch = null;
+            }
         }
     }
 }

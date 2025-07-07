@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <SourceFile>C:/Users/devin/Open5DChess/Open5DChessClient/Content/msaa.fx</SourceFile>
-  <SourceTime>2025-07-05T23:50:00.647172-07:00</SourceTime>
+  <SourceTime>2025-07-06T22:20:58.9863477-07:00</SourceTime>
   <DestFile>C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/Content/msaa.xnb</DestFile>
-  <DestTime>2025-07-05T23:50:02.6291738-07:00</DestTime>
+  <DestTime>2025-07-06T22:21:18.0108781-07:00</DestTime>
   <Importer>EffectImporter</Importer>
   <ImporterTime>2025-06-02T03:31:02-07:00</ImporterTime>
   <Processor>EffectProcessor</Processor>

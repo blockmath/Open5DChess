@@ -10,13 +10,9 @@ namespace ChessCommon {
 
         public static readonly string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-        public Vector2i TL;
+        public Vector2iTL TL;
 
-        public Vector2i parentTLVis;
-
-        public int pL;
-
-        public GameColour turn;
+        public Vector2iTL parentTL;
 
         public Piece[,] pieces = new Piece[8,8];
 
@@ -26,24 +22,12 @@ namespace ChessCommon {
 
         public Vector2i moveFrom = null, moveTo = null, moveTravel = null;
 
-        public Vector2i TLVis => TLVisImpl(TL, turn);
-
-        public static Vector2i TLVisImpl(Vector2i TL, GameColour turn) => new Vector2i(TL.X * 2 + (turn.isBlack() ? 1 : 0), TL.Y);
-
-
-        public Board(Vector2i TL, GameColour colour) {
-            this.TL = TL;
-            turn = colour;
-            pL = 0;
-            parentTLVis = null;
-        }
-
-        public Board(Vector2i TL, string fen = null) {
-            if (fen == null) fen = STARTING_FEN;
+        public Board(Vector2iTL TL = null, string fen = null) {
+            if (TL is null) TL = Vector2iTL.ORIGIN_WHITE;
+            if (fen is null) fen = STARTING_FEN;
 
             this.TL = TL;
-            pL = TL.Y;
-            parentTLVis = null;
+            parentTL = null;
 
             LoadFen(fen);
         }
@@ -57,13 +41,8 @@ namespace ChessCommon {
         }
 
         private void init(int l, Board source, Piece piece, Vector2i to, Vector2i from) {
-            parentTLVis = source.TLVis;
-            TL = new Vector2i(source.TL.X, l);
-            turn = (GameColour)(-(int)source.turn);
-            if (turn.isWhite()) {
-                TL += new Vector2i(1, 0);
-            }
-            pL = source.TL.Y;
+            parentTL = source.TL;
+            TL = new Vector2iTL(source.TL.X, l, source.TL.colour).NextTurn();
 
             Array.Copy(source.pieces, pieces, 64);
             RemovePiece(from);
@@ -83,8 +62,11 @@ namespace ChessCommon {
                 return;
             } else {
                 pieces[to.X - 1, to.Y - 1] = piece;
+                // Handle en passant
                 if (to == epTarget && ((piece & Piece.MASK_KIND) == Piece.PIECE_PAWN)) {
+                    // holy hell
                     int offset = (int)piece.getColour();
+                    // new response just dropped
                     pieces[to.X - 1, to.Y - 1 + offset] = Piece.NONE;
                 }
             }
@@ -109,9 +91,9 @@ namespace ChessCommon {
             }
 
             if (things[1] == "w") {
-                turn = GameColour.WHITE;
+                TL.colour = GameColour.WHITE;
             } else if (things[1] == "b") {
-                turn = GameColour.BLACK;
+                TL.colour = GameColour.BLACK;
             }
 
             castleRights = CastleRights.NONE;
@@ -131,7 +113,7 @@ namespace ChessCommon {
 
         public Board(Board o) {
             TL = o.TL;
-            turn = o.turn;
+            Array.Copy(o.pieces, pieces, 64);
         }
         public Board Clone() {
             return new Board(this);
