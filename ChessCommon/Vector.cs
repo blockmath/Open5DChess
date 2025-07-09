@@ -21,6 +21,11 @@ namespace ChessCommon {
             Y = o.Y;
         }
 
+        public Vector2i(string s) {
+            Y = 9 - (s[s.Length - 1] - '0');
+            X = s[s.Length - 2] - ('a' - 1);
+        }
+
         public static Vector2i operator +(Vector2i a, Vector2i b) {
             return new Vector2i(a.X + b.X, a.Y + b.Y);
         }
@@ -71,7 +76,7 @@ namespace ChessCommon {
         public int T => X;
         public int L => Y;
 
-        public static readonly Vector2iTL ORIGIN_WHITE = new Vector2iTL(0, 0, GameColour.WHITE);
+        public static readonly Vector2iTL ORIGIN_WHITE = new Vector2iTL(1, 0, GameColour.WHITE);
 
         public Vector2iTL(int x, int y, GameColour colour) : base(x, y) { 
             this.colour = colour;
@@ -83,6 +88,12 @@ namespace ChessCommon {
 
         public Vector2iTL(Vector2iTL o) : base(o) {
             colour = o.colour;
+        }
+
+        public Vector2iTL(string s, GameColour colour) : base(0, 0) {
+            Y = int.Parse(s.Split(new char[] { 'T' }, 2)[0]);
+            X = int.Parse(s.Split(new char[] { 'T' }, 2)[1]);
+            this.colour = colour;
         }
 
         public Vector2iTL NextTurn() {
@@ -141,7 +152,7 @@ namespace ChessCommon {
 
 
     public class Vector4i {
-
+        public static readonly Vector4i ZERO = new Vector4i(0, 0, 0, 0);
 
         public int X;
         public int Y;
@@ -187,7 +198,15 @@ namespace ChessCommon {
         }
 
         public bool isUnit() {
-            return -1 <= X && X <= 1 && -1 <= Y && Y <= 1 && -1 <= T && T <= 1 && -1 <= L && L <= 1;
+            return (-1 <= X && X <= 1) && (-1 <= Y && Y <= 1) && (-1 <= T && T <= 1) && (-1 <= L && L <= 1);
+        }
+
+        public bool isOrthogonal() {
+            return (X != 0 && Y == 0 && T == 0 && L == 0) || (X == 0 && Y != 0 && T == 0 && L == 0) || (X == 0 && Y == 0 && T != 0 && L == 0) || (X == 0 && Y == 0 && T == 0 && L != 0);
+        }
+
+        public Vector4i abs() {
+            return new Vector4i(Math.Abs(X), Math.Abs(Y), Math.Abs(T), Math.Abs(L));
         }
 
         public static bool operator ==(Vector4i a, Vector4i b) {

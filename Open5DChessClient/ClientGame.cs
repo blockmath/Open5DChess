@@ -66,6 +66,13 @@ namespace ChessClient
 
             // TODO: Add your update logic here
 
+            if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
+                GameStateRenderer.AttemptSelection();
+            }
+
+
+
+
             Vector3 mouse_position = new Vector3(Mouse.GetState().X, Mouse.GetState().Y, Mouse.GetState().ScrollWheelValue);
 
             Vector3 mouse_delta = mouse_position - mouse_position_previous;

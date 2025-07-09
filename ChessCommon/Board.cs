@@ -43,6 +43,7 @@ namespace ChessCommon {
         private void init(int l, Board source, Piece piece, Vector2i to, Vector2i from) {
             parentTL = source.TL;
             TL = new Vector2iTL(source.TL.X, l, source.TL.colour).NextTurn();
+            castleRights = source.castleRights;
 
             Array.Copy(source.pieces, pieces, 64);
             RemovePiece(from);

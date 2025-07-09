@@ -56,9 +56,9 @@ namespace ChessClient {
         private static readonly Color TRAVEL_COLOUR_WHITE = Color.MultiplyAlpha(Color.White, 1f);
         private static readonly Color TRAVEL_COLOUR_BLACK = Color.MultiplyAlpha(Color.Black, 1f);
 
-        private static readonly Color SELECTED_COLOUR = Color.MultiplyAlpha(Color.LimeGreen, 0.25f);
-        private static readonly Color HIGHLIGHTED_COLOUR = Color.MultiplyAlpha(Color.LightGreen, 0.25f);
-        private static readonly Color HOVERED_COLOUR = Color.MultiplyAlpha(Color.Lime, 0.25f);
+        private static readonly Color SELECTED_COLOUR = Color.MultiplyAlpha(Color.Green, 0.35f);
+        private static readonly Color HIGHLIGHTED_COLOUR = Color.MultiplyAlpha(Color.Lime, 0.35f);
+        private static readonly Color HOVERED_COLOUR = Color.MultiplyAlpha(Color.Lime, 0.35f);
 
         private static Vector2 BoardDrawPos(Vector2iTL TL) {
             return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * BOARD_OFFSET.X, TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y);
@@ -115,15 +115,15 @@ namespace ChessClient {
             return samples;
         }
 
-        public static List<Vector2> GenerateHorizontalBezier(List<Vector2> points, int samplesPerSegment, float handleLength) {
+        public static List<Vector2> GenerateHorizontalBezier(List<Vector2> points, int samplesPerSegment, float pushLength, float handleLength) {
             List<Vector2> samples = new List<Vector2>();
 
             for (int i = 0; i < points.Count - 1; ++i) {
-                Vector2 p0 = points[i];
-                Vector2 p1 = p0 + new Vector2(-handleLength, 0);
+                Vector2 p0 = points[i] + new Vector2(-pushLength, 0);
+                Vector2 p1 = points[i] + new Vector2(-handleLength, 0);
 
-                Vector2 p3 = points[i + 1];
-                Vector2 p2 = p3 + new Vector2(handleLength, 0);
+                Vector2 p3 = points[i + 1] + new Vector2(pushLength, 0);
+                Vector2 p2 = points[i + 1] + new Vector2(handleLength, 0);
 
                 samples.AddRange(GenerateBezierSegment(p0, p1, p2, p3, samplesPerSegment, false));
             }
@@ -134,9 +134,12 @@ namespace ChessClient {
         }
 
         // Render a gizmo for the timelines (connecting boards to their parents and children)
-        // For full compatibility, this should also take into account whether the timeline is inactive
-        // and turn white or black if it is (this isn't implemented yet)
         public static void RenderTimelineGizmo(Vector2iTL headTL) {
+
+
+            Color tlColour = gameState.TimelineIsActive(headTL.L) ? TL_COLOUR_A : (headTL.L > 0 ? WHITE_BOARD_COLOUR_SHADED_A : BLACK_BOARD_COLOUR_SHADED_A);
+            Color tlColourShaded = gameState.TimelineIsActive(headTL.L) ? TL_COLOUR_B : (headTL.L > 0 ? WHITE_BOARD_COLOUR_SHADED_B : BLACK_BOARD_COLOUR_SHADED_B);
+
             // Get the basic path points (where the boards are)
             List<Vector2> points = new List<Vector2>();
 
@@ -159,13 +162,13 @@ namespace ChessClient {
             }
 
             // Generate and sample a bezier curve through the boards. The control points are all assumed to be horizontal and a constant distance from the controllee.
-            List<Vector2> bezierPoints = GenerateHorizontalBezier(points, 256, 1.5f * PIECE_SIZE.X * BOARD_SIZE.X);
+            List<Vector2> bezierPoints = GenerateHorizontalBezier(points, 256, 0.25f * PIECE_SIZE.X * BOARD_SIZE.X, 1.25f * PIECE_SIZE.X * BOARD_SIZE.X);
 
             for (int i = 0; i < bezierPoints.Count - 1; ++i) {
-                UDrawLineSegment(bezierPoints[i], bezierPoints[i + 1], TL_COLOUR_B, (int)(PIECE_SIZE.Y * 2));
+                UDrawLineSegment(bezierPoints[i], bezierPoints[i + 1], tlColourShaded, (int)(PIECE_SIZE.Y * 2));
             }
             for (int i = 0; i < bezierPoints.Count - 1; ++i) {
-                UDrawLineSegment(bezierPoints[i], bezierPoints[i + 1], TL_COLOUR_A, (int)(PIECE_SIZE.Y * 1.5));
+                UDrawLineSegment(bezierPoints[i], bezierPoints[i + 1], tlColour, (int)(PIECE_SIZE.Y * 1.5));
             }
         }
         
@@ -284,7 +287,18 @@ namespace ChessClient {
             Board board = gameState.GetBoard(hovered.TL);
 
             if (board is not null) {
-                
+                if (gameState.BoardIsPlayable(hovered.TL)) {
+                    if (board.GetPiece(hovered.XY).getColour() == board.TL.colour) {
+                        selected = hovered;
+                        highlighted = Move.GetTargets(gameState.GetPseudoLegalMoves(selected));
+                    } else {
+                        selected = null;
+                        highlighted = new List<Vector4iTL>();
+                    }
+                } else {
+                    selected = null;
+                    highlighted = new List<Vector4iTL>();
+                }
             }
         }
 
@@ -300,7 +314,6 @@ namespace ChessClient {
 
                 // Update the mouse's position (in piece tiles), clear `hovered` (the mouse may have moved)
                 ws_mposi = new Vector2i((int)MathF.Floor(ws_mpos.X / PIECE_SIZE.X), (int)MathF.Floor(ws_mpos.Y / PIECE_SIZE.Y));
-
                 hovered = null;
 
                 // Render all the gizmos and boards in depth order

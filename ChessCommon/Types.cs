@@ -7,11 +7,14 @@ namespace ChessCommon {
 
     public enum GameColour : int {
         WHITE = +1,
-        BLACK = -1
+        BLACK = -1,
+        NONE = 0
     }
 
     public enum Piece : byte {
         MASK_KIND =                 0b00011111,
+        MASK_MOVABL =               0b00001111,
+        MASK_SPEC =                 0b00010000,
         MASK_ROYAL =                0b00100000,
         MASK_COLOUR =               0b01000000,
 
@@ -31,6 +34,8 @@ namespace ChessCommon {
         COLOUR_WHITE =              0b00000000,
         COLOUR_BLACK =              0b01000000,
 
+        KIND_KING =                 FLAG_SPEC | MOVABL_SPEC_KING,
+
         PIECE_ROOK =                MOVABL_ROOK,
         PIECE_BISHOP =              MOVABL_BISHOP,
         PIECE_UNICORN =             MOVABL_UNICORN,
@@ -39,12 +44,12 @@ namespace ChessCommon {
         PIECE_PAWN =                FLAG_SPEC | MOVABL_SPEC_PAWN,
         PIECE_KNIGHT =              FLAG_SPEC | MOVABL_SPEC_KNIGHT,
         PIECE_BRAWN =               FLAG_SPEC | MOVABL_SPEC_BRAWN,
-        PIECE_COMMONKING =          FLAG_SPEC | MOVABL_SPEC_KING,
+        PIECE_COMMONKING =          KIND_KING,
 
         PIECE_PRINCESS =            MOVABL_ROOK | MOVABL_BISHOP,
         PIECE_QUEEN =               MOVABL_ROOK | MOVABL_BISHOP | MOVABL_UNICORN | MOVABL_DRAGON,
 
-        PIECE_KING =                FLAG_ROYAL | PIECE_COMMONKING,
+        PIECE_KING =                FLAG_ROYAL | KIND_KING,
         PIECE_ROYALQUEEN =          FLAG_ROYAL | PIECE_QUEEN,
 
         NONE =                      0b00000000
@@ -177,20 +182,58 @@ namespace ChessCommon {
         }
     }
 
+    public enum MoveSpec : byte {
+        None = 0,
+        PromoteKnight,
+        PromoteRook,
+        PromoteBishop,
+        PromoteUnicorn,
+        PromoteDragon,
+        PromotePrincess,
+        PromoteQueen,
+
+        DoublePush,
+        EnPassant,
+
+        CastlesWK,
+        CastlesWQ,
+        CastlesBK,
+        CastlesBQ,
+
+        ForceSkipTurn
+    }
 
 
     public class Move {
+        public static Move ForceSkipTurn(Vector2iTL TL) => new Move(new Vector4iTL(new Vector2i(1, 2), TL), new Vector4iTL(new Vector2i(1, 2), TL), MoveSpec.ForceSkipTurn);
+
+
         public readonly Vector4iTL origin;
         public readonly Vector4iTL target;
+        public readonly MoveSpec spec;
 
-        public Move(Vector4iTL origin, Vector4iTL target) {
+        public Move(Vector4iTL origin, Vector4iTL target, MoveSpec spec = MoveSpec.None) {
             this.origin = origin;
             this.target = target;
+            this.spec = spec;
         }
 
         public GameColour getColour() {
             return origin.colour;
         }
+
+        public static List<Vector4iTL> GetTargets(List<Move> moves) {
+            List<Vector4iTL> targets = new List<Vector4iTL>();
+            foreach (Move move in moves) {
+                targets.Add(move.target);
+            }
+            return targets;
+        }
+
+        public bool isCastles() {
+            return spec == MoveSpec.CastlesWK || spec == MoveSpec.CastlesWQ || spec == MoveSpec.CastlesBK || spec == MoveSpec.CastlesBQ;
+        }
+
 
         public static bool operator ==(Move a, Move b) {
             return a.Equals(b);
@@ -215,7 +258,7 @@ namespace ChessCommon {
     }
 
     public class IMove : Move {
-        public IMove(Vector4iTL origin, Vector4iTL target) : base(origin, target) { }
+        public IMove(Move move) : base(move.origin, move.target, move.spec) {}
 
         public Vector2iTL target_child;
         public Vector2iTL origin_child;
