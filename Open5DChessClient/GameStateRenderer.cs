@@ -49,26 +49,28 @@ namespace ChessClient {
         private static readonly Color TL_COLOUR_A = Color.MediumPurple;
         private static readonly Color TL_COLOUR_B = Color.MultiplyAlpha(Color.Multiply(Color.MediumPurple, 0.8f), 2.0f);
 
-        private static readonly Color HIGHLIGHT_COLOUR_MOVED = Color.MultiplyAlpha(Color.Yellow, 0.5f);
-        private static readonly Color HIGHLIGHT_COLOUR_TRAVELLED = Color.MultiplyAlpha(Color.MediumPurple, 0.8f);
+        private static readonly Color HIGHLIGHT_COLOUR_MOVED = Color.Multiply(Color.Yellow, 0.5f);
+        private static readonly Color HIGHLIGHT_COLOUR_TRAVELLED = Color.Multiply(Color.MediumPurple, 0.8f);
 
         private static readonly Color TRAVEL_COLOUR = Color.MultiplyAlpha(Color.MediumPurple, 1f);
         private static readonly Color TRAVEL_COLOUR_WHITE = Color.MultiplyAlpha(Color.White, 1f);
         private static readonly Color TRAVEL_COLOUR_BLACK = Color.MultiplyAlpha(Color.Black, 1f);
 
-        private static readonly Color SELECTED_COLOUR = Color.MultiplyAlpha(Color.Green, 0.35f);
-        private static readonly Color HIGHLIGHTED_COLOUR = Color.MultiplyAlpha(Color.Lime, 0.35f);
-        private static readonly Color HOVERED_COLOUR = Color.MultiplyAlpha(Color.Lime, 0.35f);
+        private static readonly Color SELECTED_COLOUR = Color.Multiply(Color.Green, 0.35f);
+        private static readonly Color HIGHLIGHTED_COLOUR = Color.Multiply(Color.Lime, 0.35f);
+        private static readonly Color HOVERED_COLOUR = Color.Multiply(Color.White, 0.35f);
+
+        private static readonly Color GHOST_PIECE_COLOUR = Color.Multiply(Color.White, 0.5f);
 
         private static Vector2 BoardDrawPos(Vector2iTL TL) {
             return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * BOARD_OFFSET.X, TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y);
         }
 
-        private static void PieceDraw(Vector2i pos, int id) {
+        private static void PieceDraw(Vector2i pos, int id, Color colour) {
             if (id < 0) return;
             int idx = id % 6;
             int idy = id / 6;
-            spriteBatch.Draw(pieceTexture, new Rectangle((int)(pos.X * PIECE_SIZE.X), (int)(pos.Y * PIECE_SIZE.Y), (int)PIECE_SIZE.X, (int)PIECE_SIZE.Y), new Rectangle(512 * idx, 512 * idy, 512, 512), Color.White);
+            spriteBatch.Draw(pieceTexture, new Rectangle((int)(pos.X * PIECE_SIZE.X), (int)(pos.Y * PIECE_SIZE.Y), (int)PIECE_SIZE.X, (int)PIECE_SIZE.Y), new Rectangle(512 * idx, 512 * idy, 512, 512), colour);
         }
 
         public static void UDrawLineSegment(Vector2 point1, Vector2 point2, Color color, int width = 1) {
@@ -274,7 +276,13 @@ namespace ChessClient {
 
                     int id = Methods.GetPieceID(board.GetPiece(xy));
                     // Draw piece after square
-                    PieceDraw(xypos, id);
+                    PieceDraw(xypos, id, Color.White);
+
+
+                    if (xytl == hovered && highlighted.Contains(xytl)) {
+                        // Congratulations! We're hovering over a valid move. Show a ghostly image of the piece!
+                        PieceDraw(xypos, Methods.GetPieceID(gameState.GetPiece(selected)), GHOST_PIECE_COLOUR);
+                    }
                 }
             }
         }
@@ -284,6 +292,34 @@ namespace ChessClient {
             if (hovered is null) {
                 return;
             }
+
+            if (highlighted.Contains(hovered)) {
+                // Make a move!!
+                Move move = new Move(selected, hovered);
+
+                if (gameState.MoveShouldPromote(move)) {
+                    // TODO: Actually put in a modal for the player to select a piece to promote to.
+                    // Currently we're just back at the "you can only promote to queen due to UI limitations" bs.
+                    // Too bad!
+                    move = new Move(selected, hovered, MoveSpec.PromoteQueen);
+                } else if (gameState.MoveShouldDoublePush(move)) {
+                    move = new Move(selected, hovered, MoveSpec.DoublePush);
+                } else if (gameState.MoveShouldEnPassant(move)) {
+                    move = new Move(selected, hovered, MoveSpec.EnPassant);
+                } else if (gameState.MoveShouldCastle(move)) {
+                    MoveSpec castleSpec = MoveSpec.None;
+
+                    if (move.target.XY == GameState.castlesTgtWK) castleSpec = MoveSpec.CastlesWK;
+                    if (move.target.XY == GameState.castlesTgtWQ) castleSpec = MoveSpec.CastlesWQ;
+                    if (move.target.XY == GameState.castlesTgtBK) castleSpec = MoveSpec.CastlesBK;
+                    if (move.target.XY == GameState.castlesTgtBQ) castleSpec = MoveSpec.CastlesBQ;
+
+                    move = new Move(selected, hovered, castleSpec);
+                }
+
+                gameState.MakeMove(move);
+            }
+
             Board board = gameState.GetBoard(hovered.TL);
 
             if (board is not null) {

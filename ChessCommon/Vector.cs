@@ -11,6 +11,11 @@ namespace ChessCommon {
         public int X;
         public int Y;
 
+
+        public static readonly Vector2i ZERO = new Vector2i(0, 0);
+        public static readonly Vector2i AXIS_X = new Vector2i(1, 0);
+        public static readonly Vector2i AXIS_Y = new Vector2i(0, 1);
+
         public Vector2i(int x, int y) {
             X = x;
             Y = y;
@@ -38,7 +43,7 @@ namespace ChessCommon {
             return new Vector2i(a.X * b.X, a.Y * b.Y);
         }
 
-        public static Vector2i operator *(Vector2i a, int b) {
+        public static Vector2i operator *(Vector2i a, double b) {
             return new Vector2i((int)(a.X * b), (int)(a.Y * b));
         }
 
@@ -100,7 +105,7 @@ namespace ChessCommon {
             if (colour.isWhite()) {
                 return new Vector2iTL(this, GameColour.BLACK);
             } else {
-                return new Vector2iTL(this, GameColour.WHITE) + new Vector2i(1, 0);
+                return new Vector2iTL(this, GameColour.WHITE) + Vector2i.AXIS_X;
             }
         }
         public static Vector2iTL operator +(Vector2iTL a, Vector2i b) {

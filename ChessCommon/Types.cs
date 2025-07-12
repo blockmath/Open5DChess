@@ -195,17 +195,19 @@ namespace ChessCommon {
         DoublePush,
         EnPassant,
 
-        CastlesWK,
-        CastlesWQ,
-        CastlesBK,
-        CastlesBQ,
+        IsCastles = 0b00100000,
+
+        CastlesWK = 0b00100001,
+        CastlesWQ = 0b00100010,
+        CastlesBK = 0b00100011,
+        CastlesBQ = 0b00100100,
 
         ForceSkipTurn
     }
 
 
     public class Move {
-        public static Move ForceSkipTurn(Vector2iTL TL) => new Move(new Vector4iTL(new Vector2i(1, 2), TL), new Vector4iTL(new Vector2i(1, 2), TL), MoveSpec.ForceSkipTurn);
+        public static Move ForceSkipTurn(Vector2iTL TL) => new Move(new Vector4iTL(Vector2i.ZERO, TL), new Vector4iTL(Vector2i.ZERO, TL), MoveSpec.ForceSkipTurn);
 
 
         public readonly Vector4iTL origin;

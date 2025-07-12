@@ -42,7 +42,9 @@ namespace ChessCommon {
             "6.(0T6)Bf1>>(0T1)f6 (1T2)Ng3>(0T4)g3 / (1T2)c7c5";
 
         public GameState() {
-            LoadPgn(TEST_PGN);
+            //LoadPgn(TEST_PGN);
+            LoadPgn(STANDARD_PGN);
+            activePlayer = GetPresentColour();
         }
 
         public GameState(GameState o) {
@@ -50,6 +52,7 @@ namespace ChessCommon {
             minTL = o.minTL;
             maxTL = o.maxTL;
             moveStack = new Stack<IMove>(o.moveStack.ToArray());
+            activePlayer = o.activePlayer;
         }
 
         public void LoadPgn(string pgn) {
@@ -136,36 +139,81 @@ namespace ChessCommon {
                     }
                 }
             }
+
+            if (mp == 0) {
+                // Metadata is done, setup initial state
+                moveStack = new Stack<IMove>();
+                boards = new Dictionary<Vector2iTL, Board>();
+                foreach (KeyValuePair<Vector2iTL, string> kv in fen) {
+                    boards.Add(kv.Key, new Board(kv.Key, kv.Value));
+                }
+            }
         }
 
         public void MakeMoveStr(string move, GameColour colour) {
-            Match mstrmatch = Regex.Match(move, "^[^()]*\\((.*?)\\)([A-Z]?[a-h][1-8])(.*)$");
+            Match castlesmatch = Regex.Match(move, "^[^()]*\\((.*?)\\)(O-O|O-O-O)([+!?#])*$");
+            if (castlesmatch.Success) {
 
-            string tlstr = mstrmatch.Groups[1].Value;
-            string xystr = mstrmatch.Groups[2].Value;
+                string tlstr = castlesmatch.Groups[1].Value;
+                string castlesstr = castlesmatch.Groups[2].Value;
 
-            string mstr2 = mstrmatch.Groups[3].Value;
+                Vector2iTL TL = new Vector2iTL(tlstr, colour);
+                Vector2i XY, XY2;
 
-            string tlstr2;
-            string xystr2;
 
-            Vector2iTL TL = new Vector2iTL(tlstr, colour);
-            Vector2i XY = new Vector2i(xystr);
+                if (colour.isWhite()) {
+                    XY = new Vector2i("e1");
+                } else {
+                    XY = new Vector2i("e8");
+                }
 
-            if (mstr2[0] == '>') {
-                Match mstrmatch2 = Regex.Match(mstr2, "^>+\\((.*?)\\)([A-Z]?[a-h][1-8])$");
+                if (castlesstr == "O-O") {
+                    if (colour.isWhite()) {
+                        XY2 = new Vector2i("g1");
+                    } else {
+                        XY2 = new Vector2i("g8");
+                    }
+                } else {
+                    if (colour.isWhite()) {
+                        XY2 = new Vector2i("c1");
+                    } else {
+                        XY2 = new Vector2i("c8");
+                    }
+                }
 
-                tlstr2 = mstrmatch2.Groups[1].Value;
-                xystr2 = mstrmatch2.Groups[2].Value;
+                MakeMove(new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL)));
+
             } else {
-                tlstr2 = tlstr;
-                xystr2 = mstr2;
+
+                Match mstrmatch = Regex.Match(move, "^[^()]*\\((.*?)\\)([A-Z]?[a-h][1-8])x?(.*?)(=[A-Z])?([+!?#])*$");
+
+                string tlstr = mstrmatch.Groups[1].Value;
+                string xystr = mstrmatch.Groups[2].Value;
+
+                string mstr2 = mstrmatch.Groups[3].Value;
+
+                string tlstr2;
+                string xystr2;
+
+                Vector2iTL TL = new Vector2iTL(tlstr, colour);
+                Vector2i XY = new Vector2i(xystr);
+
+                if (mstr2[0] == '>') {
+                    Match mstrmatch2 = Regex.Match(mstr2, "^>+\\((.*?)\\)([A-Z]?[a-h][1-8])$");
+
+                    tlstr2 = mstrmatch2.Groups[1].Value;
+                    xystr2 = mstrmatch2.Groups[2].Value;
+                } else {
+                    tlstr2 = tlstr;
+                    xystr2 = mstr2;
+                }
+
+                Vector2iTL TL2 = new Vector2iTL(tlstr2, colour);
+                Vector2i XY2 = new Vector2i(xystr2);
+
+                MakeMove(new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL2)));
+
             }
-
-            Vector2iTL TL2 = new Vector2iTL(tlstr2, colour);
-            Vector2i XY2 = new Vector2i(xystr2);
-
-            MakeMove(new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL2)));
         }
 
         public GameState Clone() {
@@ -242,7 +290,7 @@ namespace ChessCommon {
             return GetBoard(pos.TL).GetPiece(pos.XY);
         }
 
-        // MIKE, the BOARD, please
+        
         public Board GetBoard(Vector2iTL TL) {
             if (TL is null) return null;
 
@@ -321,10 +369,14 @@ namespace ChessCommon {
 
 
 
-
+        // It's almost definitely not viable to precalculate move tables, even for rooks. Luckily the *step* tables can be trivially precalculated, those would be quite expensive.
         public List<Move> GetSlidingMoves(Vector4iTL pos, Piece p = Piece.NONE) {
             Piece piece = ((p == Piece.NONE) ? GetPiece(pos) : p);
             List<Move> moves = new List<Move>();
+
+            if ((piece & Piece.MASK_SPEC) != 0) {
+                return moves;
+            }
 
             if ((piece & Piece.MOVABL_ROOK) != 0) {
                 foreach (Vector4i s in rookSteps) {
@@ -398,8 +450,24 @@ namespace ChessCommon {
         }
 
 
-        // TODO: Implement castling
-        // This will also have to be implemented in MakeMove()
+        public static readonly Vector2i castlesTgtWK = new Vector2i("g1");
+        public static readonly Vector2i castlesTgtWQ = new Vector2i("c1");
+        public static readonly Vector2i castlesTgtBK = new Vector2i("g8");
+        public static readonly Vector2i castlesTgtBQ = new Vector2i("c8");
+        
+        public static readonly Vector2i castlesOrigW = new Vector2i("e1");
+        public static readonly Vector2i castlesOrigB = new Vector2i("e8");
+        
+        public static readonly Vector2i castlesRookWK = new Vector2i("h1");
+        public static readonly Vector2i castlesRookWQ = new Vector2i("a1");
+        public static readonly Vector2i castlesRookBK = new Vector2i("h8");
+        public static readonly Vector2i castlesRookBQ = new Vector2i("a8");
+
+        public static readonly Vector2i castlesRTWK = new Vector2i("f1");
+        public static readonly Vector2i castlesRTWQ = new Vector2i("d1");
+        public static readonly Vector2i castlesRTBK = new Vector2i("f8");
+        public static readonly Vector2i castlesRTBQ = new Vector2i("d8");
+
         public List<Move> GetKingMoves(Vector4iTL pos, Piece p = Piece.NONE) {
             Piece piece = ((p == Piece.NONE) ? GetPiece(pos) : p);
             List<Move> moves = new List<Move>();
@@ -424,28 +492,28 @@ namespace ChessCommon {
 
 
             if ((GetBoard(pos.TL).castleRights & CastleRights.WK) != 0) {
-                Vector4iTL tgt = new Vector4iTL(new Vector2i(7, 8), pos.TL);
+                Vector4iTL tgt = new Vector4iTL(castlesTgtWK, pos.TL);
                 if (p.getColour() == GameColour.WHITE && GetPiece(tgt + new Vector4i(-1, 0, 0, 0)) == Piece.NONE && GetPiece(tgt) == Piece.NONE && (GetPiece(tgt + new Vector4i(1, 0, 0, 0)) & Piece.MASK_KIND) == Piece.PIECE_ROOK) {
                     moves.Add(new Move(pos, tgt, MoveSpec.CastlesWK));
                 }
             }
 
             if ((GetBoard(pos.TL).castleRights & CastleRights.WQ) != 0) {
-                Vector4iTL tgt = new Vector4iTL(new Vector2i(3, 8), pos.TL);
+                Vector4iTL tgt = new Vector4iTL(castlesTgtWQ, pos.TL);
                 if (p.getColour() == GameColour.WHITE && GetPiece(tgt + new Vector4i(1, 0, 0, 0)) == Piece.NONE && GetPiece(tgt) == Piece.NONE && GetPiece(tgt + new Vector4i(-1, 0, 0, 0)) == Piece.NONE && (GetPiece(tgt + new Vector4i(-2, 0, 0, 0)) & Piece.MASK_KIND) == Piece.PIECE_ROOK) {
                     moves.Add(new Move(pos, tgt, MoveSpec.CastlesWQ));
                 }
             }
 
             if ((GetBoard(pos.TL).castleRights & CastleRights.BK) != 0) {
-                Vector4iTL tgt = new Vector4iTL(new Vector2i(7, 1), pos.TL);
+                Vector4iTL tgt = new Vector4iTL(castlesTgtBK, pos.TL);
                 if (p.getColour() == GameColour.BLACK && GetPiece(tgt + new Vector4i(-1, 0, 0, 0)) == Piece.NONE && GetPiece(tgt) == Piece.NONE && (GetPiece(tgt + new Vector4i(1, 0, 0, 0)) & Piece.MASK_KIND) == Piece.PIECE_ROOK) {
                     moves.Add(new Move(pos, tgt, MoveSpec.CastlesBK));
                 }
             }
 
             if ((GetBoard(pos.TL).castleRights & CastleRights.BQ) != 0) {
-                Vector4iTL tgt = new Vector4iTL(new Vector2i(3, 1), pos.TL);
+                Vector4iTL tgt = new Vector4iTL(castlesTgtBQ, pos.TL);
                 if (p.getColour() == GameColour.BLACK && GetPiece(tgt + new Vector4i(1, 0, 0, 0)) == Piece.NONE && GetPiece(tgt) == Piece.NONE && GetPiece(tgt + new Vector4i(-1, 0, 0, 0)) == Piece.NONE && (GetPiece(tgt + new Vector4i(-2, 0, 0, 0)) & Piece.MASK_KIND) == Piece.PIECE_ROOK) {
                     moves.Add(new Move(pos, tgt, MoveSpec.CastlesBQ));
                 }
@@ -462,7 +530,7 @@ namespace ChessCommon {
             int offset = -(int)piece.getColour();
 
             // I'm **pretty** sure this is correct to check that a pawn is on *its* second rank
-            bool isFirstStep = (pos.Y == 8 + offset) || (pos.Y == 0 + offset);
+            bool isFirstStep = (pos.Y == 8 + offset) || (pos.Y == 1 + offset);
 
             Vector4iTL tgt;
             Vector4i off;
@@ -595,6 +663,77 @@ namespace ChessCommon {
             return (1 <= pos.X && pos.X <= 8 && 1 <= pos.Y && pos.Y <= 8 && BoardExists(pos.TL));
         }
 
+        public bool MoveShouldPromote(Move move) {
+            if (!BoardExists(move.origin.TL)) {
+                throw new Exception("Error: origin board does not exist");
+            }
+
+            if (!BoardExists(move.target.TL)) {
+                throw new Exception("Error: target board does not exist");
+            }
+
+            switch (GetPiece(move.origin) & Piece.MASK_KIND) {
+                case Piece.PIECE_PAWN:
+                case Piece.PIECE_BRAWN:
+                    return (move.target.Y == 1 || move.target.Y == 8);
+                default:
+                    return false;
+            }
+        }
+
+        public bool MoveShouldCastle(Move move) {
+            if (!BoardExists(move.origin.TL)) {
+                throw new Exception("Error: origin board does not exist");
+            }
+
+            if (!BoardExists(move.target.TL)) {
+                throw new Exception("Error: target board does not exist");
+            }
+
+            if ((GetPiece(move.origin) & Piece.MASK_KIND) == Piece.KIND_KING) {
+                return Math.Abs(move.origin.X - move.target.X) == 2;
+            } else {
+                return false;
+            }
+        }
+
+        public bool MoveShouldDoublePush(Move move) {
+            if (!BoardExists(move.origin.TL)) {
+                throw new Exception("Error: origin board does not exist");
+            }
+
+            if (!BoardExists(move.target.TL)) {
+                throw new Exception("Error: target board does not exist");
+            }
+
+            switch (GetPiece(move.origin) & Piece.MASK_KIND) {
+                case Piece.PIECE_PAWN:
+                case Piece.PIECE_BRAWN:
+                    return Math.Abs(move.target.Y - move.origin.Y) == 2;
+                default:
+                    return false;
+            }
+        }
+
+        public bool MoveShouldEnPassant(Move move) {
+            if (!BoardExists(move.origin.TL)) {
+                throw new Exception("Error: origin board does not exist");
+            }
+
+            if (!BoardExists(move.target.TL)) {
+                throw new Exception("Error: target board does not exist");
+            }
+
+            switch (GetPiece(move.origin) & Piece.MASK_KIND) {
+                case Piece.PIECE_PAWN:
+                case Piece.PIECE_BRAWN:
+
+                    return move.target.XY == GetBoard(move.target.TL).epTarget;
+                default:
+                    return false;
+            }
+        }
+
 
         public void MakeMove(Move move) {
             if (!BoardExists(move.origin.TL)) {
@@ -614,12 +753,12 @@ namespace ChessCommon {
             if ((GetPiece(move.target) & Piece.MASK_KIND) == Piece.KIND_KING) {
                 switch (GetPiece(move.target).getColour()) {
                     case GameColour.WHITE:
-                        if (move.target.XY == new Vector2i(5, 8)) {
+                        if (move.target.XY == castlesOrigW) {
                             lostCastleRightsTarget |= (CastleRights.WK | CastleRights.WQ);
                         }
                         break;
                     case GameColour.BLACK:
-                        if (move.target.XY == new Vector2i(5, 1)) {
+                        if (move.target.XY == castlesOrigB) {
                             lostCastleRightsTarget |= (CastleRights.BK | CastleRights.BQ);
                         }
                         break;
@@ -628,18 +767,46 @@ namespace ChessCommon {
 
             if ((GetPiece(move.target) & Piece.MASK_KIND) == Piece.PIECE_ROOK) {
                 Vector2i p = move.target.XY;
-                if (p == new Vector2i(8, 8)) {
+                if (p == castlesRookWK) {
                     lostCastleRightsTarget |= CastleRights.WK;
-                } else if (p == new Vector2i(1, 8)) {
+                } else if (p == castlesRookWQ) {
                     lostCastleRightsTarget |= CastleRights.WQ;
-                } else if (p == new Vector2i(8, 1)) {
+                } else if (p == castlesRookBK) {
                     lostCastleRightsTarget |= CastleRights.BK;
-                } else if (p == new Vector2i(1, 1)) {
+                } else if (p == castlesRookBQ) {
                     lostCastleRightsTarget |= CastleRights.BQ;
                 }
             }
 
             Board newFromBoard, newToBoard;
+
+            Piece promotionPiece = Piece.NONE;
+
+            switch (move.spec) {
+                case MoveSpec.PromoteKnight:
+                    promotionPiece = Piece.PIECE_KNIGHT;
+                    break;
+                case MoveSpec.PromoteRook:
+                    promotionPiece = Piece.PIECE_ROOK;
+                    break;
+                case MoveSpec.PromoteBishop:
+                    promotionPiece = Piece.PIECE_BISHOP;
+                    break;
+                case MoveSpec.PromoteUnicorn:
+                    promotionPiece = Piece.PIECE_UNICORN;
+                    break;
+                case MoveSpec.PromoteDragon:
+                    promotionPiece = Piece.PIECE_DRAGON;
+                    break;
+                case MoveSpec.PromotePrincess:
+                    promotionPiece = Piece.PIECE_PRINCESS;
+                    break;
+                case MoveSpec.PromoteQueen:
+                    promotionPiece = Piece.PIECE_QUEEN;
+                    break;
+                default:
+                    break;
+            }
 
             if (move.origin.TL == move.target.TL) {
                 // Standard move
@@ -648,6 +815,10 @@ namespace ChessCommon {
                 IMove imove = new IMove(move);
 
                 Piece movePiece = moveBoard.GetPiece(move.origin.XY);
+
+                if (promotionPiece != Piece.NONE) {
+                    movePiece = (movePiece.getColour().isWhite() ? Piece.COLOUR_WHITE : Piece.COLOUR_BLACK) | promotionPiece;
+                }
 
                 newFromBoard = newToBoard = new Board(moveBoard, movePiece, move.origin.XY, move.target.XY);
 
@@ -666,7 +837,40 @@ namespace ChessCommon {
                     newFromBoard.moveTo = move.target.XY;
                 }
 
-                boards.Add(newFromBoard.TL, newFromBoard);
+                if ((move.spec & MoveSpec.IsCastles) != 0) {
+                    Vector2i rookFrom, rookTo;
+                    switch (move.spec) {
+                        case MoveSpec.CastlesWK:
+                            rookFrom = castlesRookWK;
+                            rookTo = castlesRTWK;
+                            break;
+                        case MoveSpec.CastlesWQ:
+                            rookFrom = castlesRookWQ;
+                            rookTo = castlesRTWQ;
+                            break;
+                        case MoveSpec.CastlesBK:
+                            rookFrom = castlesRookBK;
+                            rookTo = castlesRTBK;
+                            break;
+                        case MoveSpec.CastlesBQ:
+                            rookFrom = castlesRookBQ;
+                            rookTo = castlesRTBQ;
+                            break;
+                        default:
+                            rookFrom = Vector2i.ZERO;
+                            rookTo = Vector2i.ZERO;
+                            break;
+                    }
+                    Piece p2 = newToBoard.GetPiece(rookFrom);
+                    newToBoard.RemovePiece(rookFrom);
+                    newToBoard.PlacePiece(p2, rookTo);
+                } else if (move.spec == MoveSpec.DoublePush) {
+                    newToBoard.epTarget = (move.target.XY + move.origin.XY) * 0.5;
+                } else if (move.spec == MoveSpec.EnPassant) {
+                    newToBoard.RemovePiece(new Vector2i(move.target.X, move.origin.Y));
+                }
+
+                    boards.Add(newFromBoard.TL, newFromBoard);
                 moveStack.Push(imove);
             } else if (BoardIsPlayable(move.target.TL)) {
                 // Move to active board (no timeline split)
@@ -677,6 +881,10 @@ namespace ChessCommon {
                 IMove imove = new IMove(move);
 
                 Piece movePiece = fromBoard.GetPiece(move.origin.XY);
+
+                if (promotionPiece != Piece.NONE) {
+                    movePiece = (movePiece.getColour().isWhite() ? Piece.COLOUR_WHITE : Piece.COLOUR_BLACK) | promotionPiece;
+                }
 
                 newFromBoard = new Board(fromBoard, movePiece, move.origin.XY, null);
                 newToBoard = new Board(toBoard.TL.Y, toBoard, movePiece, move.target.XY);
@@ -705,6 +913,10 @@ namespace ChessCommon {
                 IMove imove = new IMove(move);
 
                 Piece movePiece = fromBoard.GetPiece(move.origin.XY);
+
+                if (promotionPiece != Piece.NONE) {
+                    movePiece = (movePiece.getColour().isWhite() ? Piece.COLOUR_WHITE : Piece.COLOUR_BLACK) | promotionPiece;
+                }
 
                 newFromBoard = new Board(fromBoard, movePiece, move.origin.XY, null);
 
@@ -737,12 +949,12 @@ namespace ChessCommon {
             if ((GetPiece(move.origin) & Piece.MASK_KIND) == Piece.KIND_KING) {
                 switch (GetPiece(move.origin).getColour()) {
                     case GameColour.WHITE:
-                        if (move.origin.XY == new Vector2i(5, 8)) {
+                        if (move.origin.XY == castlesOrigW) {
                             newFromBoard.castleRights &=~ (CastleRights.WK | CastleRights.WQ);
                         }
                         break;
                     case GameColour.BLACK:
-                        if (move.origin.XY == new Vector2i(5, 1)) {
+                        if (move.origin.XY == castlesOrigB) {
                             newFromBoard.castleRights &=~ (CastleRights.BK | CastleRights.BQ);
                         }
                         break;
@@ -751,13 +963,13 @@ namespace ChessCommon {
 
             if ((GetPiece(move.origin) & Piece.MASK_KIND) == Piece.PIECE_ROOK) {
                 Vector2i p = move.origin.XY;
-                if (p == new Vector2i(8, 8)) {
+                if (p == castlesRookWK) {
                     newFromBoard.castleRights &=~ CastleRights.WK;
-                } else if (p == new Vector2i(1, 8)) {
+                } else if (p == castlesRookWQ) {
                     newFromBoard.castleRights &=~ CastleRights.WQ;
-                } else if (p == new Vector2i(8, 1)) {
+                } else if (p == castlesRookBK) {
                     newFromBoard.castleRights &=~ CastleRights.BK;
-                } else if (p == new Vector2i(1, 1)) {
+                } else if (p == castlesRookBQ) {
                     newFromBoard.castleRights &=~ CastleRights.BQ;
                 }
             }
@@ -765,6 +977,15 @@ namespace ChessCommon {
             newToBoard.castleRights &=~ lostCastleRightsTarget;
 
         }
+
+        public void SubmitMoves() {
+            if (GetPresentColour() == activePlayer) {
+                throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
+            } else {
+                activePlayer = GetPresentColour();
+            }
+        }
+
 
         public void UnmakeMove(Move move = null) {
             if (!(move is null) && move != moveStack.First()) {
