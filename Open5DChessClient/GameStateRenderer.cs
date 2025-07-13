@@ -16,6 +16,8 @@ namespace ChessClient {
 
         public static GameState gameState;
 
+        public static ColourRights userRights;
+
         public static Vector2 ws_mpos;
         private static Vector2i ws_mposi;
 
@@ -317,7 +319,7 @@ namespace ChessClient {
                     move = new Move(selected, hovered, castleSpec);
                 }
 
-                gameState.MakeMove(move);
+                gameState.MakeMoveValidated(move, userRights);
             }
 
             Board board = gameState.GetBoard(hovered.TL);
@@ -326,7 +328,7 @@ namespace ChessClient {
                 if (gameState.BoardIsPlayable(hovered.TL)) {
                     if (board.GetPiece(hovered.XY).getColour() == board.TL.colour) {
                         selected = hovered;
-                        highlighted = Move.GetTargets(gameState.GetPseudoLegalMoves(selected));
+                        highlighted = Move.GetTargets(gameState.GetLegalMoves(selected));
                     } else {
                         selected = null;
                         highlighted = new List<Vector4iTL>();

@@ -127,6 +127,18 @@
           "lib/netcoreapp2.0/_._": {}
         }
       },
+      "ChessBot/1.0.0": {
+        "type": "project",
+        "dependencies": {
+          "ChessCommon": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/ChessBot.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/ChessBot.dll": {}
+        }
+      },
       "ChessCommon/1.0.0": {
         "type": "project",
         "compile": {
@@ -291,6 +303,11 @@
         "version.txt"
       ]
     },
+    "ChessBot/1.0.0": {
+      "type": "project",
+      "path": "../StupidBot/ChessBot.csproj",
+      "msbuildProject": "../StupidBot/ChessBot.csproj"
+    },
     "ChessCommon/1.0.0": {
       "type": "project",
       "path": "../ChessCommon/ChessCommon.csproj",
@@ -299,6 +316,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
+      "ChessBot >= 1.0.0",
       "ChessCommon >= 1.0.0",
       "MonoGame.Content.Builder.Task >= 3.8.*",
       "MonoGame.Framework.DesktopGL >= 3.8.*"
@@ -338,6 +356,9 @@
           "projectReferences": {
             "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj": {
               "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj"
+            },
+            "C:\\Users\\devin\\Open5DChess\\StupidBot\\ChessBot.csproj": {
+              "projectPath": "C:\\Users\\devin\\Open5DChess\\StupidBot\\ChessBot.csproj"
             }
           }
         }

@@ -223,11 +223,11 @@ namespace ChessCommon {
         public Dictionary<Vector2iTL, Board> boards;
         public GameColour activePlayer;
 
-        public List<Board> GetMoveableBoards() {
+        public List<Board> GetMoveableBoards(GameColour colour = GameColour.NONE) {
             List<Board> mb = new List<Board>();
 
             foreach (Board board in boards.Values) {
-                if (BoardIsPlayable(board.TL)) {
+                if (BoardIsPlayable(board.TL) && board.TL.colour != colour.inverse()) {
                     mb.Add(board);
                 }
             }
@@ -633,7 +633,7 @@ namespace ChessCommon {
 
 
 
-        public List<Move> GetPseudoLegalMoves(Vector4iTL pos, Piece p = Piece.NONE) {
+        public List<Move> GetLegalMoves(Vector4iTL pos, Piece p = Piece.NONE) {
             Piece piece = ((p == Piece.NONE) ? GetPiece(pos) : p);
             List<Move> moves = new List<Move>();
 
@@ -654,6 +654,34 @@ namespace ChessCommon {
             return moves;
         }
 
+        public List<Move> GetLegalMoves(Vector2iTL bv) {
+            List<Move> moves = new List<Move>();
+            for (int x = 1; x <= 8; ++x) {
+                for (int y = 1; y <= 8; ++y) {
+                    Vector4iTL pos = new Vector4iTL(new Vector2i(x, y), bv);
+                    if (GetPiece(pos).getColour() == bv.colour) {
+                        moves.AddRange(GetLegalMoves(pos));
+                    }
+                }
+            }
+            return moves;
+        }
+
+
+        public List<Move> GetLegalMoves(GameColour colour = GameColour.NONE) {
+            if (colour == GameColour.NONE) {
+                colour = activePlayer;
+            }
+
+
+            List<Move> moves = new List<Move>();
+
+            foreach (Board board in GetMoveableBoards(colour)) {
+                moves.AddRange(GetLegalMoves(board.TL));
+            }
+
+            return moves;
+        }
 
 
 
@@ -733,6 +761,13 @@ namespace ChessCommon {
                     return false;
             }
         }
+
+        public void MakeMoveValidated(Move move, ColourRights rights) {
+            if (rights.hasRights(move.getColour()) && GetLegalMoves(move.getColour()).Contains(move)) {
+                MakeMove(move);
+            }
+        }
+
 
 
         public void MakeMove(Move move) {
@@ -978,8 +1013,16 @@ namespace ChessCommon {
 
         }
 
+        public bool CanSubmitMoves() {
+            return GetPresentColour() != activePlayer;
+        }
+
+        public bool CanUndoMoves() {
+            return moveStack.Count > 0 && moveStack.First().getColour() == activePlayer;
+        }
+
         public void SubmitMoves() {
-            if (GetPresentColour() == activePlayer) {
+            if (!CanSubmitMoves()) {
                 throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
             } else {
                 activePlayer = GetPresentColour();

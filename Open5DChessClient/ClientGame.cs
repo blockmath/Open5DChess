@@ -1,4 +1,5 @@
 ﻿using ChessCommon;
+using ChessBot;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -20,8 +21,31 @@ namespace ChessClient
         Texture2D pieceTexture;
         Vector3 cameraPosition = Vector3.Zero;
 
-        Matrix CamMatrix => Matrix.CreateTranslation(cameraPosition * new Vector3(1, 1, 0)) * Matrix.CreateScale(MathF.Pow(10, cameraPosition.Z)) * Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2() / 2, 0));
+        Matrix WindowCentreMatrixX => Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2().X / 2, 0, 0));
+        Matrix WindowCentreMatrixY => Matrix.CreateTranslation(new Vector3(0, Window.ClientBounds.Size.ToVector2().Y / 2, 0));
+        Matrix WindowCentreMatrix => Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2() / 2, 0));
+        Matrix CamMatrix => Matrix.CreateTranslation(cameraPosition * new Vector3(1, 1, 0)) * Matrix.CreateScale(MathF.Pow(10, cameraPosition.Z)) * WindowCentreMatrix;
         Matrix CamMatrixInv => Matrix.Invert(CamMatrix);
+
+
+        static Rectangle ButtonSubmitRect = new Rectangle(10, 10, 200, 50);
+        bool SubmitIsAllowed => GameStateRenderer.gameState.CanSubmitMoves();
+        bool submitHovered = false;
+
+        static Rectangle ButtonUndoRect = new Rectangle(-210, 10, 200, 50);
+        bool UndoIsAllowed => GameStateRenderer.gameState.CanUndoMoves();
+        bool undoHovered = false;
+
+        static Color BUTTON_COLOUR_UNAVAILABLE = Color.LightGoldenrodYellow;
+        static Color BUTTON_COLOUR_AVAILABLE = Color.Goldenrod;
+        static Color BUTTON_COLOUR_HOVERED = Color.DarkGoldenrod;
+
+
+        BotInterface whiteInterface;
+        BotInterface blackInterface;
+
+        bool thinkQueued = false;
+
 
         public ClientGame()
         {
@@ -37,6 +61,11 @@ namespace ChessClient
             Window.AllowUserResizing = true;
 
             GameStateRenderer.gameState = new ChessCommon.GameState();
+
+            whiteInterface = null;
+            blackInterface = new BotInterface<ChessBot.ChessBot>(GameStateRenderer.gameState);
+
+            GameStateRenderer.userRights = (whiteInterface is null ? ColourRights.WHITE : ColourRights.NONE) | (blackInterface is null ? ColourRights.BLACK : ColourRights.NONE);
 
             base.Initialize();
         }
@@ -61,13 +90,15 @@ namespace ChessClient
 
         protected override void Update(GameTime gameTime)
         {
-            //if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-            //    Exit();
-
-            // TODO: Add your update logic here
 
             if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
-                GameStateRenderer.AttemptSelection();
+                if (submitHovered) {
+                    if (SubmitIsAllowed) GameStateRenderer.gameState.SubmitMoves();
+                } else if (undoHovered) {
+                    if (UndoIsAllowed) GameStateRenderer.gameState.UnmakeMove();
+                } else {
+                    GameStateRenderer.AttemptSelection();
+                }
             }
 
 
@@ -90,6 +121,41 @@ namespace ChessClient
 
             }
 
+
+            // Poll bots and such
+
+            if (GameStateRenderer.gameState.activePlayer.isWhite()) {
+                if (whiteInterface is not null) {
+                    if (!whiteInterface.IsThinking()) {
+                        if (!thinkQueued) {
+                            whiteInterface.StartThink();
+                            thinkQueued = true;
+                        } else {
+                            thinkQueued = false;
+                            Move chosenMove = whiteInterface.GetMove();
+                            if (chosenMove is not null) {
+                                GameStateRenderer.gameState.MakeMove(chosenMove);
+                            }
+                        }
+                    }
+                }
+            } else if (GameStateRenderer.gameState.activePlayer.isBlack()) {
+                if (blackInterface is not null) {
+                    if (!blackInterface.IsThinking()) {
+                        if (!thinkQueued) {
+                            blackInterface.StartThink();
+                            thinkQueued = true;
+                        } else {
+                            thinkQueued = false;
+                            Move chosenMove = blackInterface.GetMove();
+                            if (chosenMove is not null) {
+                                GameStateRenderer.gameState.MakeMove(chosenMove);
+                            }
+                        }
+                    }
+                }
+            }
+            
             base.Update(gameTime);
         }
 
@@ -97,8 +163,7 @@ namespace ChessClient
         {
             GraphicsDevice.Clear(Color.Lavender);
 
-            // TODO: Add your drawing code here
-
+            // Draw game boards and other "world-space" objects
             spriteBatch.Begin(
                 transformMatrix: CamMatrix,
                 samplerState: SamplerState.PointClamp,
@@ -109,6 +174,43 @@ namespace ChessClient
             GameStateRenderer.ws_mpos = Vector2.Transform(mpos, CamMatrixInv);
 
             GameStateRenderer.Render(spriteBatch, cameraPosition, Window.ClientBounds.Size.ToVector2());
+
+            spriteBatch.End();
+
+
+
+            // Draw UI and other screen-space objects
+            spriteBatch.Begin(
+                transformMatrix: WindowCentreMatrixX,
+                samplerState: SamplerState.PointClamp,
+                effect: msaa,
+                blendState: null
+            );
+
+            submitHovered = undoHovered = false;
+
+            Color submitButtonColour = BUTTON_COLOUR_UNAVAILABLE;
+            Color undoButtonColour = BUTTON_COLOUR_UNAVAILABLE;
+
+            if (SubmitIsAllowed) {
+                submitButtonColour = BUTTON_COLOUR_AVAILABLE;
+                if (ButtonSubmitRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrixX)))) {
+                    submitButtonColour = BUTTON_COLOUR_HOVERED;
+                    submitHovered = true;
+                }
+            }
+
+            if (UndoIsAllowed) {
+                undoButtonColour = BUTTON_COLOUR_AVAILABLE;
+                if (ButtonUndoRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrixX)))) {
+                    undoButtonColour = BUTTON_COLOUR_HOVERED;
+                    undoHovered = true;
+                }
+            }
+
+            spriteBatch.Draw(GameStateRenderer.sq, ButtonSubmitRect, submitButtonColour);
+            spriteBatch.Draw(GameStateRenderer.sq, ButtonUndoRect, undoButtonColour);
+
 
             spriteBatch.End();
 

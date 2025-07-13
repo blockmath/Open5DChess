@@ -50,6 +50,9 @@
             "projectReferences": {
               "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj": {
                 "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj"
+              },
+              "C:\\Users\\devin\\Open5DChess\\StupidBot\\ChessBot.csproj": {
+                "projectPath": "C:\\Users\\devin\\Open5DChess\\StupidBot\\ChessBot.csproj"
               }
             }
           }
@@ -97,6 +100,26 @@
           },
           "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
         }
+      }
+    },
+    "C:\\Users\\devin\\Open5DChess\\StupidBot\\ChessBot.csproj": {
+      "restore": {
+        "projectUniqueName": "C:\\Users\\devin\\Open5DChess\\StupidBot\\ChessBot.csproj",
+        "projectName": "ChessBot",
+        "projectPath": "C:\\Users\\devin\\Open5DChess\\StupidBot\\ChessBot.csproj",
+        "UsingMicrosoftNETSdk": false,
+        "frameworks": {
+          "net472": {
+            "projectReferences": {
+              "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj": {
+                "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj"
+              }
+            }
+          }
+        }
+      },
+      "frameworks": {
+        "net472": {}
       }
     }
   }

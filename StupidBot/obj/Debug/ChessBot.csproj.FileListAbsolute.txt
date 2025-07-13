@@ -1,0 +1,12 @@
+C:\Users\devin\Open5DChess\StupidBot\obj\Debug\ChessBot.csproj.AssemblyReference.cache
+C:\Users\devin\Open5DChess\StupidBot\obj\Debug\ChessBot.csproj.CoreCompileInputs.cache
+C:\Users\devin\Open5DChess\StupidBot\bin\Debug\ChessBot.exe.config
+C:\Users\devin\Open5DChess\StupidBot\bin\Debug\ChessBot.exe
+C:\Users\devin\Open5DChess\StupidBot\bin\Debug\ChessBot.pdb
+C:\Users\devin\Open5DChess\StupidBot\bin\Debug\ChessCommon.exe
+C:\Users\devin\Open5DChess\StupidBot\bin\Debug\ChessCommon.pdb
+C:\Users\devin\Open5DChess\StupidBot\bin\Debug\ChessCommon.exe.config
+C:\Users\devin\Open5DChess\StupidBot\obj\Debug\ChessBot.csproj.Up2Date
+C:\Users\devin\Open5DChess\StupidBot\obj\Debug\ChessBot.exe
+C:\Users\devin\Open5DChess\StupidBot\obj\Debug\ChessBot.pdb
+C:\Users\devin\Open5DChess\StupidBot\obj\Debug\ChessBot.exe.config

@@ -63,6 +63,13 @@ namespace ChessCommon {
         BQ = 0b1000
     }
 
+    public enum ColourRights : byte {
+        NONE = 0b00,
+        WHITE = 0b01,
+        BLACK = 0b10,
+        BOTH = WHITE | BLACK
+    }
+
     public static class Methods {
 
 
@@ -170,6 +177,10 @@ namespace ChessCommon {
         public static bool isWhite(this GameColour colour) => colour == GameColour.WHITE;
         public static bool isBlack(this GameColour colour) => colour == GameColour.BLACK;
 
+        public static GameColour inverse(this GameColour colour) => (GameColour)(-(int)colour);
+
+        public static bool hasRights(this ColourRights rights, GameColour colour) => colour.isWhite() ? (rights & ColourRights.WHITE) != 0 : (rights & ColourRights.BLACK) != 0;
+
         public static GameColour getColour(this Piece piece) {
             if (piece == Piece.NONE) return 0;
 
@@ -195,14 +206,14 @@ namespace ChessCommon {
         DoublePush,
         EnPassant,
 
+        ForceSkipTurn,
+
         IsCastles = 0b00100000,
 
         CastlesWK = 0b00100001,
         CastlesWQ = 0b00100010,
         CastlesBK = 0b00100011,
-        CastlesBQ = 0b00100100,
-
-        ForceSkipTurn
+        CastlesBQ = 0b00100100
     }
 
 
@@ -248,13 +259,15 @@ namespace ChessCommon {
         public override bool Equals(object obj) {
             return obj is Move move &&
                    origin == move.origin &&
-                   target == move.target;
+                   target == move.target &&
+                   spec == move.spec;
         }
 
         public override int GetHashCode() {
             int hashCode = -447757500;
             hashCode = hashCode * -1521134295 + EqualityComparer<Vector4iTL>.Default.GetHashCode(origin);
             hashCode = hashCode * -1521134295 + EqualityComparer<Vector4iTL>.Default.GetHashCode(target);
+            hashCode = hashCode * -1521134295 + EqualityComparer<MoveSpec>.Default.GetHashCode(spec);
             return hashCode;
         }
     }
