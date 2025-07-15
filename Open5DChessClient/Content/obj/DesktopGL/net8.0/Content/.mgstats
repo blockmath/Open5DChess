@@ -1,5 +1,0 @@
-Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"C:/Users/devin/Open5DChess/Open5DChessClient/Content/arrow.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/Content/arrow.xnb","TextureProcessor","Texture2DContent",8468,1048661,0.0942177
-"C:/Users/devin/Open5DChess/Open5DChessClient/Content/msaa.fx","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/Content/msaa.xnb","EffectProcessor","CompiledEffectContent",2692,1636,0.2988198
-"C:/Users/devin/Open5DChess/Open5DChessClient/Content/pieces.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/Content/pieces.xnb","TextureProcessor","Texture2DContent",262765,25165909,0.3445122
-"C:/Users/devin/Open5DChess/Open5DChessClient/Content/sq.png","C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/Content/sq.xnb","TextureProcessor","Texture2DContent",72,89,0.0713245

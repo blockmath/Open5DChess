@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessClient", "Open5DChessClient\ChessClient.csproj", "{286C48A1-25C4-4A5B-82A9-62D9E9E49B01}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessClient", "ChessClient\ChessClient.csproj", "{286C48A1-25C4-4A5B-82A9-62D9E9E49B01}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessCommon", "ChessCommon\ChessCommon.csproj", "{D91A689A-A892-4E8C-9836-E1A44B787202}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessBot", "StupidBot\ChessBot.csproj", "{013480CF-3253-4D7B-8A5F-DEE151BC5234}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessBot", "ChessBot\ChessBot.csproj", "{013480CF-3253-4D7B-8A5F-DEE151BC5234}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

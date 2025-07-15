@@ -28,3 +28,5 @@ bin/
 ### Mac OS ###
 .DS_Store
 /.vs
+/Open5DChessClient/Content/CrimsonText-Regular.ttf
+/Open5DChessClient/Content/crimsontext_regular.spritefont

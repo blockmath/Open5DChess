@@ -22,6 +22,8 @@ namespace ChessCommon {
 
         public Vector2i moveFrom = null, moveTo = null, moveTravel = null;
 
+        public ColourRights playerHasLost = ColourRights.NONE;
+
         public Board(Vector2iTL TL = null, string fen = null) {
             if (TL is null) TL = Vector2iTL.ORIGIN_WHITE;
             if (fen is null) fen = STARTING_FEN;
@@ -44,6 +46,7 @@ namespace ChessCommon {
             parentTL = source.TL;
             TL = new Vector2iTL(source.TL.X, l, source.TL.colour).NextTurn();
             castleRights = source.castleRights;
+            playerHasLost = source.playerHasLost;
 
             Array.Copy(source.pieces, pieces, 64);
             RemovePiece(from);

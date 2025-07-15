@@ -60,6 +60,7 @@
     <Compile Include="Exceptions.cs" />
     <Compile Include="GameState.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Timer.cs" />
     <Compile Include="Types.cs" />
     <Compile Include="Vector.cs" />
   </ItemGroup>

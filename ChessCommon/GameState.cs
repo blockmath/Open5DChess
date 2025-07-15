@@ -222,6 +222,12 @@ namespace ChessCommon {
 
         public Dictionary<Vector2iTL, Board> boards;
         public GameColour activePlayer;
+        public Timer timer;
+        public TimerView timerView => new TimerView(timer);
+
+        public void StartWithTimer(Timer timer) {
+            this.timer = timer;
+        }
 
         public List<Board> GetMoveableBoards(GameColour colour = GameColour.NONE) {
             List<Board> mb = new List<Board>();
@@ -783,6 +789,8 @@ namespace ChessCommon {
                 throw new Exception("Error: Attempting to make a move on a frozen board");
             }
 
+
+            IMove imove = new IMove(move);
             CastleRights lostCastleRightsTarget = CastleRights.NONE;
 
             if ((GetPiece(move.target) & Piece.MASK_KIND) == Piece.KIND_KING) {
@@ -846,8 +854,6 @@ namespace ChessCommon {
             if (move.origin.TL == move.target.TL) {
                 // Standard move
                 Board moveBoard = GetBoard(move.origin.TL);
-
-                IMove imove = new IMove(move);
 
                 Piece movePiece = moveBoard.GetPiece(move.origin.XY);
 
@@ -913,8 +919,6 @@ namespace ChessCommon {
                 Board fromBoard = GetBoard(move.origin.TL);
                 Board toBoard = GetBoard(move.target.TL);
 
-                IMove imove = new IMove(move);
-
                 Piece movePiece = fromBoard.GetPiece(move.origin.XY);
 
                 if (promotionPiece != Piece.NONE) {
@@ -944,8 +948,6 @@ namespace ChessCommon {
 
                 Board fromBoard = GetBoard(move.origin.TL);
                 Board toBoard = GetBoard(move.target.TL);
-
-                IMove imove = new IMove(move);
 
                 Piece movePiece = fromBoard.GetPiece(move.origin.XY);
 
@@ -1011,7 +1013,26 @@ namespace ChessCommon {
 
             newToBoard.castleRights &=~ lostCastleRightsTarget;
 
+            if ((GetPiece(move.target) & Piece.MASK_ROYAL) != 0) {
+                // uhoh the player haseth deaddoed
+                newToBoard.playerHasLost |= GetPiece(move.target).getColour().isWhite() ? ColourRights.WHITE : ColourRights.BLACK;
+            }
+
+            playerHasLost = PlayerHasLostImpl();
+
         }
+
+        public ColourRights PlayerHasLostImpl() {
+            ColourRights pl = ColourRights.NONE;
+            foreach (Board board in GetMoveableBoards()) {
+                pl |= board.playerHasLost;
+            }
+            return pl;
+        }
+
+        public ColourRights playerHasLost { get; private set; }
+
+        public bool PlayerRoyalCaptured => playerHasLost != ColourRights.NONE;
 
         public bool CanSubmitMoves() {
             return GetPresentColour() != activePlayer;
@@ -1024,15 +1045,15 @@ namespace ChessCommon {
         public void SubmitMoves() {
             if (!CanSubmitMoves()) {
                 throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
-            } else {
-                activePlayer = GetPresentColour();
             }
+            activePlayer = GetPresentColour();
+            timer.SetTurn(activePlayer);
         }
 
 
         public void UnmakeMove(Move move = null) {
             if (!(move is null) && move != moveStack.First()) {
-                throw new Exception("Error: Attempting to unmake a move that's not at the top of the stack");
+                throw new InvalidOperationException("Error: Attempting to unmake a move that's not at the top of the stack");
             }
 
             IMove imove = moveStack.Pop();
@@ -1050,6 +1071,8 @@ namespace ChessCommon {
             if (boards.ContainsKey(imove.target_child)) {
                 boards.Remove(imove.target_child);
             }
+
+            playerHasLost = PlayerHasLostImpl();
         }
     }
 }
