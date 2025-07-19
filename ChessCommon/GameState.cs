@@ -29,6 +29,13 @@ namespace ChessCommon {
             "[Variant \"Standard\"]\n" +
             "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR:0:1:w]";
 
+        public static readonly string STANDARD_T0_PGN =
+            "[Mode \"5D\"]\n" +
+            "[Size \"8x8\"]\n" +
+            "[Variant \"Standard - Turn Zero\"]\n" +
+            "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR:0:0:b]\n" +
+            "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR:0:1:w]";
+
         public static readonly string TEST_PGN =
             "[Mode \"5D\"]\n" +
             "[Size \"8x8\"]\n" +
@@ -43,7 +50,7 @@ namespace ChessCommon {
 
         public GameState() {
             //LoadPgn(TEST_PGN);
-            LoadPgn(STANDARD_PGN);
+            LoadPgn(STANDARD_T0_PGN);
             activePlayer = GetPresentColour();
         }
 
@@ -55,7 +62,13 @@ namespace ChessCommon {
             activePlayer = o.activePlayer;
         }
 
+        public Vector2i bi_min { get; private set; }
+        public Vector2i bi_max { get; private set; }
+
         public void LoadPgn(string pgn) {
+            bi_min = Vector2i.INFINITY;
+            bi_max = Vector2i.INFINITY * -1;
+
             List<string> things = new List<string>(pgn.Split('\n'));
 
             int sp = 0;
@@ -92,22 +105,20 @@ namespace ChessCommon {
                             break;
                         default: // Assume it's a FEN string for a single-board setup
                             List<string> lfen = new List<string>(slin[0].Replace("*", "").Split(':'));
+                            Vector2iTL bpos = new Vector2iTL(int.Parse(lfen[2]), int.Parse(lfen[1]), lfen[3] == "w" ? GameColour.WHITE : GameColour.BLACK);
                             fen.Add(
                                 // Not sure what order the turn and timeline are in lmao
-                                new Vector2iTL(int.Parse(lfen[2]), int.Parse(lfen[1]), lfen[3] == "w" ? GameColour.WHITE : GameColour.BLACK),
+                                bpos,
                                 lfen[0] + " " + lfen[3] + " KQkq - 0 1"
                             );
+                            bi_min = bpos.vpos.Min(bi_min);
+                            bi_max = bpos.vpos.Max(bi_max);
                             break;
                     }
                 } else {
 
                     if (mp == 0) {
-                        // Metadata is done, setup initial state
-                        moveStack = new Stack<IMove>();
-                        boards = new Dictionary<Vector2iTL, Board>();
-                        foreach (KeyValuePair<Vector2iTL, string> kv in fen) {
-                            boards.Add(kv.Key, new Board(kv.Key, kv.Value));
-                        }
+                        FenSetupPreMp(fen);
                     }
 
                     List<string> lsp = new List<string>(line.Split(new char[] { '.' }, 2));
@@ -141,12 +152,26 @@ namespace ChessCommon {
             }
 
             if (mp == 0) {
-                // Metadata is done, setup initial state
-                moveStack = new Stack<IMove>();
-                boards = new Dictionary<Vector2iTL, Board>();
-                foreach (KeyValuePair<Vector2iTL, string> kv in fen) {
-                    boards.Add(kv.Key, new Board(kv.Key, kv.Value));
+                FenSetupPreMp(fen);
+            }
+
+            RecalculateGameBounds();
+        }
+
+        private void FenSetupPreMp(Dictionary<Vector2iTL, string> fen) {
+            // Metadata is done, setup initial state
+            moveStack = new Stack<IMove>();
+            boards = new Dictionary<Vector2iTL, Board>();
+            foreach (KeyValuePair<Vector2iTL, string> kv in fen) {
+                Vector2iTL prev = (kv.Key - new Vector2i(1, 0)).NextTurn();
+                Debug.WriteLine(prev.ToString());
+                Board board;
+                if (boards.ContainsKey(prev)) {
+                    board = new Board(boards[prev], kv.Value);
+                } else {
+                    board = new Board(kv.Key, kv.Value);
                 }
+                boards.Add(kv.Key, board);
             }
         }
 
@@ -241,6 +266,8 @@ namespace ChessCommon {
             return mb;
         }
 
+        private int minT = 0;
+        private int maxT = 0;
 
         private int minTL = 0;
         private int maxTL = 0;
@@ -1018,6 +1045,8 @@ namespace ChessCommon {
                 newToBoard.playerHasLost |= GetPiece(move.target).getColour().isWhite() ? ColourRights.WHITE : ColourRights.BLACK;
             }
 
+            maxT = Math.Max(maxT, Math.Max(newFromBoard.TL.T, newToBoard.TL.T));
+
             playerHasLost = PlayerHasLostImpl();
 
         }
@@ -1042,12 +1071,94 @@ namespace ChessCommon {
             return moveStack.Count > 0 && moveStack.First().getColour() == activePlayer;
         }
 
+        public bool LastMoveWasTravel() {
+            return moveStack.Count > 0 && moveStack.First().isTravel();
+        }
+
+        public bool ColourCanActiveTravel(GameColour colour) {
+            switch (colour) {
+                case GameColour.WHITE:
+                    return maxATL > maxTL;
+                case GameColour.BLACK:
+                    return minATL < minTL;
+                default:
+                    return minATL < minTL && maxATL > maxTL;
+            }
+        }
+
+        public int GetMinATL() => minATL;
+        public int GetMaxATL() => maxATL;
+
+        public int GetMinTL() => minTL;
+        public int GetMaxTL() => maxTL;
+
+        public int GetMinT() => minT;
+        public int GetMaxT() => maxT;
+
+
+        public void RecalculateGameBounds() {
+            minTL = int.MaxValue;
+            maxTL = int.MinValue;
+
+            minT = int.MaxValue;
+            maxT = int.MinValue;
+
+            foreach (Vector2iTL pos in boards.Keys) {
+                minTL = Math.Min(minTL, pos.L);
+                maxTL = Math.Max(maxTL, pos.L);
+
+                minT = Math.Min(minT, pos.T);
+                maxT = Math.Max(maxT, pos.T);
+            }
+        }
+
+        public List<IMove> GetUnsubmittedMoves() {
+            List<IMove> boards = new List<IMove>();
+            foreach (IMove move in moveStack) {
+                if (move.getColour() != activePlayer) {
+                    return boards;
+                }
+                boards.Add(move);
+            }
+            return boards;
+        }
+
+        public struct BoardSubmissionState {
+            public BoardSubmissionState(bool isSubmitted, bool isTravel = false) {
+                this.isSubmitted = isSubmitted;
+                this.isTravel = isTravel;
+            }
+
+            public readonly bool isSubmitted;
+            public readonly bool isTravel;
+        }
+
+        public BoardSubmissionState GetBoardSubmissionState(Vector2iTL pos) {
+            foreach (IMove move in GetUnsubmittedMoves()) {
+                if (pos == move.origin_child || pos == move.target_child) {
+                    return new BoardSubmissionState(isSubmitted: false, isTravel: move.isTravel());
+                }
+            }
+            return new BoardSubmissionState(true);
+        }
+
         public void SubmitMoves() {
             if (!CanSubmitMoves()) {
                 throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
             }
             activePlayer = GetPresentColour();
             timer.SetTurn(activePlayer);
+        }
+
+
+
+        public void GuiUndoMove() {
+            if (CanUndoMoves()) {
+                UnmakeMove();
+            } else if (moveStack.Count > 0) {
+                activePlayer = activePlayer.inverse();
+                UnmakeMove();
+            }
         }
 
 

@@ -235,6 +235,9 @@ namespace ChessCommon {
             return origin.colour;
         }
 
+        public bool isTravel() {
+            return origin.TL != target.TL;
+        }
         public static List<Vector4iTL> GetTargets(List<Move> moves) {
             List<Vector4iTL> targets = new List<Vector4iTL>();
             foreach (Move move in moves) {

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <SourceFile>C:/Users/devin/Open5DChess/Open5DChessClient/Content/sq.png</SourceFile>
+  <SourceFile>C:/Users/devin/Open5DChess/ChessClient/Content/sq.png</SourceFile>
   <SourceTime>2025-07-02T00:37:10.1298291-07:00</SourceTime>
-  <DestFile>C:/Users/devin/Open5DChess/Open5DChessClient/Content/bin/DesktopGL/sq.xnb</DestFile>
-  <DestTime>2025-07-15T02:53:00.6074766-07:00</DestTime>
+  <DestFile>C:/Users/devin/Open5DChess/ChessClient/Content/bin/DesktopGL/sq.xnb</DestFile>
+  <DestTime>2025-07-18T14:52:47.757091-07:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2025-06-02T03:31:02-07:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

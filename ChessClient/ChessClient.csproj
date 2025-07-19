@@ -35,7 +35,13 @@
     <ProjectReference Include="..\ChessCommon\ChessCommon.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="CrimsonText-Italic.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="CrimsonText-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Inconsolata-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

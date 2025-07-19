@@ -1,4 +1,5 @@
 ﻿using ChessCommon;
+using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -21,6 +22,8 @@ namespace ChessClient {
         public static Vector2 ws_mpos;
         private static Vector2i ws_mposi;
 
+        public static Vector2 ws_i;
+
         public static Vector4iTL selected = null;
         public static Vector4iTL hovered = null;
         public static List<Vector4iTL> highlighted = new List<Vector4iTL>();
@@ -29,24 +32,36 @@ namespace ChessClient {
         public static Texture2D pieceTexture;
         public static Texture2D sq;
         public static Texture2D arsq;
+        public static Texture2D circle;
+
+        public static FontSystem fontSystem;
+        private static SpriteFontBase spriteFont;
 
         private static SpriteBatch spriteBatch;
 
-        private static readonly Vector2 PIECE_SIZE = new Vector2(32);
-        private static readonly Vector2 BOARD_SIZE = new Vector2(8);
-        private static readonly Vector2 BOARD_OFFSET = new Vector2(12);
+        public static readonly Vector2 PIECE_SIZE = new Vector2(32);
+        public static readonly Vector2 BOARD_SIZE = new Vector2(8);
+        public static readonly Vector2 BOARD_OFFSET = new Vector2(12);
 
         private static readonly Color LIGHT_SQUARE_COLOUR = Color.BlanchedAlmond;
         private static readonly Color DARK_SQUARE_COLOUR = Color.Tan;
 
         private static readonly Color WHITE_BOARD_COLOUR = Color.White;
         private static readonly Color BLACK_BOARD_COLOUR = Color.Black;
+        private static readonly Color UNSUB_BOARD_COLOUR = new Color(255, 245, 103);
+        private static readonly Color UNSUB_TRAVEL_BOARD_COLOUR = Color.MediumPurple;
 
-        private static readonly Color WHITE_BOARD_COLOUR_SHADED_A = Color.White;
-        private static readonly Color BLACK_BOARD_COLOUR_SHADED_A = Color.Black;
+        public static readonly Color TIME_COLOUR_LIGHT = Color.Lerp(Color.MediumPurple, Color.White, 0.25f);
+        public static readonly Color TIME_COLOUR_DARK = Color.Lerp(Color.MediumPurple, Color.Black, 0.00f);
 
-        private static readonly Color WHITE_BOARD_COLOUR_SHADED_B = Color.LightGray;
-        private static readonly Color BLACK_BOARD_COLOUR_SHADED_B = Color.DarkGray;
+        public static readonly Color WHITE_BOARD_COLOUR_SHADED_A = new Color(240, 240, 240);
+        public static readonly Color BLACK_BOARD_COLOUR_SHADED_A = new Color(48, 48, 48);
+        
+        public static readonly Color WHITE_BOARD_COLOUR_SHADED_B = Color.White;
+        public static readonly Color BLACK_BOARD_COLOUR_SHADED_B = Color.Black;
+
+        private static readonly Color LIGHT_GRID_COLOUR = new Color(232, 232, 240);
+        private static readonly Color DARK_GRID_COLOUR = new Color(224, 224, 232);
 
         private static readonly Color TL_COLOUR_A = Color.MediumPurple;
         private static readonly Color TL_COLOUR_B = Color.MultiplyAlpha(Color.Multiply(Color.MediumPurple, 0.8f), 2.0f);
@@ -66,6 +81,16 @@ namespace ChessClient {
 
         private static Vector2 BoardDrawPos(Vector2iTL TL) {
             return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * BOARD_OFFSET.X, TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y);
+        }
+
+        public static Rectangle VecRect(Vector2 pos, Vector2 size) => new Rectangle((int)pos.X, (int)pos.Y, (int)size.X, (int)size.Y);
+
+        public static Rectangle RectSurrounding(Vector2 center, Vector2 size) {
+            return VecRect(center - size / 2, size);
+        }
+
+        public static Rectangle SqrSurrounding(Vector2 center, float size) {
+            return RectSurrounding(center, new Vector2(size));
         }
 
         private static void PieceDraw(Vector2i pos, int id, Color colour) {
@@ -151,7 +176,7 @@ namespace ChessClient {
 
             int initL = headTL.Y;
 
-            while (b.TL.X >= 0) {
+            while (true) {
                 points.Add(BoardDrawPos(b.TL));
 
                 b = gameState.GetBoard(b.parentTL);
@@ -164,6 +189,7 @@ namespace ChessClient {
             if (b is not null) {
                 points.Add(BoardDrawPos(b.TL));
             }
+
 
             // Generate and sample a bezier curve through the boards. The control points are all assumed to be horizontal and a constant distance from the controllee.
             List<Vector2> bezierPoints = GenerateHorizontalBezier(points, 256, 0.25f * PIECE_SIZE.X * BOARD_SIZE.X, 1.25f * PIECE_SIZE.X * BOARD_SIZE.X);
@@ -217,26 +243,82 @@ namespace ChessClient {
         }
 
         // Render a gizmo for the big bar that shows the Present (the time of the earliest active playable board)
-        // If you make more than 32000 timelines in one direction and run out of bar that's on you
+        // If you make 5.6 million timelines and run out of bar that's on you
+        // actually that would probably break **all** the rendering code outright sooooooo...
         public static void RenderThePresent() {
             float presentPos = gameState.GetPresentPly() * PIECE_SIZE.X * BOARD_OFFSET.X;
 
+            float minTLPos = (gameState.GetMinTL() - 1) * PIECE_SIZE.Y * BOARD_OFFSET.Y;
+            float maxTLPos = (gameState.GetMaxTL() + 1) * PIECE_SIZE.Y * BOARD_OFFSET.Y;
+
+
             Color presentColour = gameState.GetPresentColour().isWhite() ? WHITE_BOARD_COLOUR_SHADED_A : BLACK_BOARD_COLOUR_SHADED_A;
             Color presentColourShaded = gameState.GetPresentColour().isWhite() ? WHITE_BOARD_COLOUR_SHADED_B : BLACK_BOARD_COLOUR_SHADED_B;
+            Color presentTextColour = gameState.GetPresentColour().isBlack() ? WHITE_BOARD_COLOUR_SHADED_A : BLACK_BOARD_COLOUR_SHADED_A;
 
-            spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 3)), (int)(-32000 * PIECE_SIZE.Y), (int)(PIECE_SIZE.X * 6), (int)(64000 * PIECE_SIZE.Y)), presentColourShaded);
-            spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 2.5)), (int)(-32000 * PIECE_SIZE.Y), (int)(PIECE_SIZE.X * 5), (int)(64000 * PIECE_SIZE.Y)), presentColour);
+
+            // Draw the bar
+
+            spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 3)), int.MinValue / 2, (int)(PIECE_SIZE.X * 6), int.MaxValue), presentColourShaded);
+            spriteBatch.Draw(sq, new Rectangle((int)(presentPos - (PIECE_SIZE.X * 2.5)), int.MinValue / 2, (int)(PIECE_SIZE.X * 5), int.MaxValue), presentColour);
+
+
+            // Draw the indicators for ability to active travel
+
+            // For White
+            if (gameState.ColourCanActiveTravel(GameColour.WHITE)) {
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 3)), WHITE_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 2.5)), WHITE_BOARD_COLOUR_SHADED_A);
+            } else {
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 2)), WHITE_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 1.5)), WHITE_BOARD_COLOUR_SHADED_A);
+            }
+
+            // For Black
+            if (gameState.ColourCanActiveTravel(GameColour.BLACK)) {
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 3)), BLACK_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 2.5)), BLACK_BOARD_COLOUR_SHADED_A);
+            } else {
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 2)), BLACK_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 1.5)), BLACK_BOARD_COLOUR_SHADED_A);
+            }
+
+
+            // Draw the "The Present" label
+            Vector2 labelSize = spriteFont.MeasureString("The Present");
+
+            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, maxTLPos + PIECE_SIZE.Y * BOARD_OFFSET.Y), presentTextColour, (float)(Math.PI / 2));
+            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, minTLPos - PIECE_SIZE.Y * BOARD_OFFSET.Y - labelSize.X), presentTextColour, (float)(Math.PI / 2));
         }
 
         // Render a single board, including the border (showing whether it's playable, whose turn it is, etc.)
         public static void RenderBoard(Board board) {
+
             float borderWidth = gameState.BoardIsPlayable(board.TL) ? 0.5f : 0.125f;
-            spriteBatch.Draw(sq, new Rectangle(
+
+            Point boardPos = new Point (
                 (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * (BOARD_SIZE.X / 2 + borderWidth)),
-                (int)(board.TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth)),
+                (int)(board.TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth))
+            );
+            Point boardSize = new Point(
                 (int)(PIECE_SIZE.X * (BOARD_SIZE.X + 2 * borderWidth)),
-                (int)(PIECE_SIZE.Y * (BOARD_SIZE.Y + 2 * borderWidth))),
-                board.TL.colour.isWhite() ? WHITE_BOARD_COLOUR : BLACK_BOARD_COLOUR
+                (int)(PIECE_SIZE.Y * (BOARD_SIZE.Y + 2 * borderWidth))
+            );
+            
+
+            Color boardBorderColour = Color.Transparent;
+            GameState.BoardSubmissionState submissionState = gameState.GetBoardSubmissionState(board.TL);
+
+            if (submissionState.isSubmitted) {
+                boardBorderColour = (board.TL.colour.isWhite() ? WHITE_BOARD_COLOUR : BLACK_BOARD_COLOUR);
+            } else {
+                boardBorderColour = (submissionState.isTravel ? UNSUB_TRAVEL_BOARD_COLOUR : UNSUB_BOARD_COLOUR);
+            }
+
+            spriteBatch.Draw(sq, new Rectangle(
+                boardPos,
+                boardSize),
+                boardBorderColour
             );
             for (int i = 0; i < BOARD_SIZE.X; i++) {
                 for (int j = 0; j < BOARD_SIZE.Y; j++) {
@@ -341,6 +423,32 @@ namespace ChessClient {
         }
 
 
+        public static void RenderGrid() {
+            int ws_overscan = 2 * Math.Max(Math.Max((int)(ws_i.X / BOARD_OFFSET.X), (int)(ws_i.Y / BOARD_OFFSET.Y)), 10);
+
+            for (int t = gameState.GetMinT() - ws_overscan; t <= gameState.GetMaxT() + ws_overscan; ++t) {
+                for (int l = gameState.GetMinTL() - ws_overscan; l <= gameState.GetMaxTL() + ws_overscan; ++l) {
+                    Rectangle target = new Rectangle(
+                        (int)((2 * t) * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * BOARD_OFFSET.X / 2),
+                        (int)(l * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * BOARD_OFFSET.Y / 2),
+                        (int)(2 * PIECE_SIZE.X * BOARD_OFFSET.X),
+                        (int)(PIECE_SIZE.Y * BOARD_OFFSET.Y)
+                    );
+
+                    spriteBatch.Draw(sq, target, (t + l) % 2 == 0 ? LIGHT_GRID_COLOUR : DARK_GRID_COLOUR);
+                }
+            }
+        }
+
+
+        public static Vector2 GetInitialCameraState() {
+            Vector2 cam_min = (new Vector2(gameState.bi_min.X, gameState.bi_min.Y) - new Vector2(0.5f)) * PIECE_SIZE * BOARD_OFFSET;
+            Vector2 cam_max = (new Vector2(gameState.bi_max.X, gameState.bi_max.Y) + new Vector2(0.5f)) * PIECE_SIZE * BOARD_OFFSET;
+
+            return (cam_min + cam_max) / 2;
+        }
+
+
         // Note: Checking `hovered` (for interactions like clicking) should be done outside of this function,
         // because this function also does double duty of figuring out what square is hovered in the first place!
         public static void Render(SpriteBatch batch, Vector3 cameraPosition, Vector2 windowSize) {
@@ -350,11 +458,17 @@ namespace ChessClient {
                 // Store the batch temporarily in a static field so it can be accessed in subroutines without having to pass it around everywhere
                 spriteBatch = batch;
 
+                // Setup sprite fonts, etc
+                spriteFont = fontSystem.GetFont(192);
+
+
                 // Update the mouse's position (in piece tiles), clear `hovered` (the mouse may have moved)
                 ws_mposi = new Vector2i((int)MathF.Floor(ws_mpos.X / PIECE_SIZE.X), (int)MathF.Floor(ws_mpos.Y / PIECE_SIZE.Y));
                 hovered = null;
 
                 // Render all the gizmos and boards in depth order
+                RenderGrid();
+
                 RenderThePresent();
 
                 foreach (Board board in gameState.GetMoveableBoards()) {
@@ -375,6 +489,7 @@ namespace ChessClient {
                 // The batch is obviously only accessible *while* we're rendering, not in other calls.
                 spriteBatch = null;
             }
+
         }
     }
 }

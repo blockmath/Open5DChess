@@ -38,6 +38,13 @@ namespace ChessCommon {
             init(source.TL.Y, source, piece, to, from);
         }
 
+        public Board(Board source, string fen) {
+            LoadFen(fen);
+
+            TL = source.TL.NextTurn();
+            parentTL = source.TL;
+        }
+
         public Board(int l, Board source, Piece piece, Vector2i to) {
             init(l, source, piece, to, null);
         }
@@ -94,11 +101,11 @@ namespace ChessCommon {
                 }
             }
 
-            if (things[1] == "w") {
+            /*if (things[1] == "w") {
                 TL.colour = GameColour.WHITE;
             } else if (things[1] == "b") {
                 TL.colour = GameColour.BLACK;
-            }
+            }*/
 
             castleRights = CastleRights.NONE;
             if (things[2].Contains("K")) castleRights |= CastleRights.WK;
@@ -112,7 +119,7 @@ namespace ChessCommon {
                 epTarget = new Vector2i(things[3][0] - ('a' - 1), things[3][1] - '0');
             }
 
-            // We don't care about clocks here
+            // We don't care about move clocks here
         }
 
         public Board(Board o) {

@@ -15,6 +15,7 @@ namespace ChessCommon {
         public static readonly Vector2i ZERO = new Vector2i(0, 0);
         public static readonly Vector2i AXIS_X = new Vector2i(1, 0);
         public static readonly Vector2i AXIS_Y = new Vector2i(0, 1);
+        public static readonly Vector2i INFINITY = new Vector2i(int.MaxValue, int.MaxValue);
 
         public Vector2i(int x, int y) {
             X = x;
@@ -51,6 +52,14 @@ namespace ChessCommon {
             return new Vector2i(a.X / b.X, a.Y / b.Y);
         }
 
+        public Vector2i Min(Vector2i o) {
+            return new Vector2i(Math.Min(X, o.X), Math.Min(Y, o.Y));
+        }
+
+        public Vector2i Max(Vector2i o) {
+            return new Vector2i(Math.Max(X, o.X), Math.Max(Y, o.Y));
+        }
+
         public static bool operator ==(Vector2i a, Vector2i b) {
             return !(a is null) && !(b is null) && a.X == b.X && a.Y == b.Y;
         }
@@ -80,6 +89,9 @@ namespace ChessCommon {
 
         public int T => X;
         public int L => Y;
+
+
+        public Vector2i vpos => new Vector2i(2 * X + (colour.isWhite() ? 0 : 1), Y);
 
         public static readonly Vector2iTL ORIGIN_WHITE = new Vector2iTL(1, 0, GameColour.WHITE);
 
@@ -152,6 +164,10 @@ namespace ChessCommon {
             hashCode = hashCode * -1521134295 + Y.GetHashCode();
             hashCode = hashCode * -1521134295 + colour.GetHashCode();
             return hashCode;
+        }
+
+        public override string ToString() {
+            return "<" + X + (colour.isWhite() ? "w" : "b") + ", " + Y + ">";
         }
     }
 
