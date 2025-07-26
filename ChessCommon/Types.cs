@@ -176,6 +176,7 @@ namespace ChessCommon {
 
         public static bool isWhite(this GameColour colour) => colour == GameColour.WHITE;
         public static bool isBlack(this GameColour colour) => colour == GameColour.BLACK;
+        public static bool isNone(this GameColour colour) => colour == GameColour.NONE;
 
         public static GameColour inverse(this GameColour colour) => (GameColour)(-(int)colour);
 

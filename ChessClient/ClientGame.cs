@@ -54,11 +54,14 @@ namespace ChessClient
         static Color BUTTON_COLOUR_UNDOTRAVEL = Color.MediumPurple;
         static Color BUTTON_COLOUR_HOVERED = Color.LimeGreen;
 
+        static Color BG_CLEAR_COLOUR = new Color(228, 228, 236);
+
 
         BotInterface whiteInterface;
         BotInterface blackInterface;
 
         private bool thinkQueued = false;
+
 
 
         public ClientGame()
@@ -108,6 +111,9 @@ namespace ChessClient
             GameStateRenderer.fontSystem = new FontSystem();
             GameStateRenderer.fontSystem.AddFont(File.ReadAllBytes("CrimsonText-Italic.ttf"));
 
+            GameStateRenderer.gridFontSystem = new FontSystem();
+            GameStateRenderer.gridFontSystem.AddFont(File.ReadAllBytes("PublicSans-ExtraBold.ttf"));
+
             clockFontSystem = new FontSystem();
             clockFontSystem.AddFont(File.ReadAllBytes("Inconsolata-Regular.ttf"));
         }
@@ -127,7 +133,7 @@ namespace ChessClient
 
             if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
                 if (submitHovered) {
-                    if (SubmitIsAllowed) GameStateRenderer.gameState.SubmitMoves();
+                    if (GameStateRenderer.colourWon.isNone() && SubmitIsAllowed) GameStateRenderer.gameState.SubmitMoves();
                 } else if (undoHovered) {
                     if (UndoIsAllowed) GameStateRenderer.gameState.GuiUndoMove();
                 } else {
@@ -193,7 +199,16 @@ namespace ChessClient
             try {
                 GameStateRenderer.gameState.timer.Tick((long)(gameTime.ElapsedGameTime.TotalNanoseconds / 1000));
             } catch (ChessTimeOutException e) {
-                GameColour timeoutColour = e.colour;
+                GameStateRenderer.colourWon = e.colour.inverse();
+                GameStateRenderer.gameState.timer.Stop();
+
+                if (whiteInterface is not null && whiteInterface.IsThinking()) {
+                    whiteInterface.HaltThink();
+                }
+
+                if (blackInterface is not null && blackInterface.IsThinking()) {
+                    blackInterface.HaltThink();
+                }
             }
 
 
@@ -203,7 +218,7 @@ namespace ChessClient
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Lavender);
+            GraphicsDevice.Clear(GameStateRenderer.NothingGridColour);
 
             // Draw game boards and other "world-space" objects
             spriteBatch.Begin(

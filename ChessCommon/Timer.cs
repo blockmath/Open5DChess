@@ -41,6 +41,11 @@ namespace ChessCommon {
         }
 
         public void SetTurn(GameColour colour) {
+            if (turn.isNone() && colour.isBlack()) {
+                // White submitted first move, don't start the timer yet
+                return;
+            }
+
             if (turn.isWhite()) {
                 us_white += us_increment;
             } else if (turn.isBlack()) {
@@ -64,6 +69,10 @@ namespace ChessCommon {
                     throw new ChessTimeOutException(GameColour.BLACK);
                 }
             }
+        }
+
+        public void Stop() {
+            turn = GameColour.NONE;
         }
 
         public string ToString(GameColour colour) {

@@ -11,6 +11,7 @@ namespace ChessBot {
     
     public interface BotInterface {
         void StartThink();
+        void HaltThink();
 
         bool IsThinking();
         Move GetMove();
@@ -53,6 +54,10 @@ namespace ChessBot {
 
             botThread = new Thread(new ThreadStart(Think));
             botThread.Start();
+        }
+
+        public void HaltThink() {
+            botThread.Abort();
         }
 
         public bool IsThinking() => !(botThread is null) && botThread.IsAlive;

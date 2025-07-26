@@ -275,6 +275,8 @@ namespace ChessCommon {
         private int minATL => (-maxTL) - 1;
         private int maxATL => (-minTL) + 1;
 
+        private int maxT5;
+
         private Stack<IMove> moveStack;
         public List<IMove> GetMoves() {
             List<IMove> ms = moveStack.ToList();
@@ -796,7 +798,7 @@ namespace ChessCommon {
         }
 
         public void MakeMoveValidated(Move move, ColourRights rights) {
-            if (rights.hasRights(move.getColour()) && GetLegalMoves(move.getColour()).Contains(move)) {
+            if (rights.hasRights(move.getColour()) && GetLegalMoves(move.getColour()).Contains(move) && move.getColour() == activePlayer) {
                 MakeMove(move);
             }
         }
@@ -1046,6 +1048,7 @@ namespace ChessCommon {
             }
 
             maxT = Math.Max(maxT, Math.Max(newFromBoard.TL.T, newToBoard.TL.T));
+            maxT5 = Math.Max(maxT5, Math.Max(newFromBoard.TL.NextTurn().T, newToBoard.TL.NextTurn().T));
 
             playerHasLost = PlayerHasLostImpl();
 
@@ -1095,6 +1098,8 @@ namespace ChessCommon {
         public int GetMinT() => minT;
         public int GetMaxT() => maxT;
 
+        public int GetMaxT5() => maxT5;
+
 
         public void RecalculateGameBounds() {
             minTL = int.MaxValue;
@@ -1102,6 +1107,7 @@ namespace ChessCommon {
 
             minT = int.MaxValue;
             maxT = int.MinValue;
+            maxT5 = int.MinValue;
 
             foreach (Vector2iTL pos in boards.Keys) {
                 minTL = Math.Min(minTL, pos.L);
@@ -1109,6 +1115,7 @@ namespace ChessCommon {
 
                 minT = Math.Min(minT, pos.T);
                 maxT = Math.Max(maxT, pos.T);
+                maxT5 = Math.Max(maxT5, pos.NextTurn().T);
             }
         }
 

@@ -99,3 +99,4 @@ C:\Users\devin\Open5DChess\ChessClient\obj\x86\Debug\net8.0\ref\ChessClient.dll
 C:\Users\devin\Open5DChess\ChessClient\bin\x86\Debug\net8.0\Content\circle.xnb
 C:\Users\devin\Open5DChess\ChessClient\bin\x86\Debug\net8.0\CrimsonText-Italic.ttf
 C:\Users\devin\Open5DChess\ChessClient\bin\x86\Debug\net8.0\Inconsolata-Regular.ttf
+C:\Users\devin\Open5DChess\ChessClient\bin\x86\Debug\net8.0\PublicSans-ExtraBold.ttf

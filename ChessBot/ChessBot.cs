@@ -15,10 +15,10 @@ namespace ChessBot {
     /// Interface:
     /// 
     /// You may implement a constructor, which will be called before the game begins.
-    /// You must implement `Think`.
+    /// You must implement `Think`. (Or don't. Your call.)
     /// You will recieve a copy of the current `GameState`, as well as a timer view.
     /// To make a move, return that `Move`.
-    /// To submit moves, throw `CommandSubmitMoves`.
+    /// To submit moves, throw `CommandSubmitMoves`. (Or just call the helper function provided for you.)
     /// 
     /// Until you submit moves, `Think` will be repeatedly called.
     /// Consider caching decisions so that you don't have to redo an entire search just to make two moves.
@@ -30,10 +30,12 @@ namespace ChessBot {
     public class ChessBot {
         public ChessBot() { }
 
+        public void SubmitMoves() => throw new CommandSubmitMoves();
+
         public virtual Move Think(GameState gameState, TimerView timer) {
 
             if (gameState.CanSubmitMoves()) {
-                throw new CommandSubmitMoves();
+                SubmitMoves();
             }
 
             List<Move> moves = gameState.GetLegalMoves();

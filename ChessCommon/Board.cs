@@ -10,11 +10,13 @@ namespace ChessCommon {
 
         public static readonly string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+        public static Vector2i BoardSize = new Vector2i(8, 8);
+
         public Vector2iTL TL;
 
         public Vector2iTL parentTL;
 
-        public Piece[,] pieces = new Piece[8,8];
+        public Piece[,] pieces = new Piece[BoardSize.X, BoardSize.Y];
 
         public CastleRights castleRights;
 
@@ -55,7 +57,7 @@ namespace ChessCommon {
             castleRights = source.castleRights;
             playerHasLost = source.playerHasLost;
 
-            Array.Copy(source.pieces, pieces, 64);
+            Array.Copy(source.pieces, pieces, BoardSize.X * BoardSize.Y);
             RemovePiece(from);
             PlacePiece(piece, to);
         }
@@ -94,7 +96,7 @@ namespace ChessCommon {
                 if (c == '/') {
                     bp.X = 0;
                     bp.Y++;
-                } else if ('1' <= c && c <= '8') {
+                } else if ('1' <= c && c <= '9') {
                     bp.X += (c - '0');
                 } else {
                     pieces[bp.X++, bp.Y] = Methods.FromChar(c);
@@ -124,7 +126,7 @@ namespace ChessCommon {
 
         public Board(Board o) {
             TL = o.TL;
-            Array.Copy(o.pieces, pieces, 64);
+            Array.Copy(o.pieces, pieces, BoardSize.X * BoardSize.Y);
         }
         public Board Clone() {
             return new Board(this);

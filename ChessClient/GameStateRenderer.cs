@@ -17,6 +17,8 @@ namespace ChessClient {
 
         public static GameState gameState;
 
+        public static GameColour colourWon = GameColour.NONE;
+
         public static ColourRights userRights;
 
         public static Vector2 ws_mpos;
@@ -37,11 +39,14 @@ namespace ChessClient {
         public static FontSystem fontSystem;
         private static SpriteFontBase spriteFont;
 
+        public static FontSystem gridFontSystem;
+        private static SpriteFontBase gridFont;
+
         private static SpriteBatch spriteBatch;
 
         public static readonly Vector2 PIECE_SIZE = new Vector2(32);
-        public static readonly Vector2 BOARD_SIZE = new Vector2(8);
-        public static readonly Vector2 BOARD_OFFSET = new Vector2(12);
+        public static          Vector2 BOARD_SIZE => new Vector2(Board.BoardSize.X, Board.BoardSize.Y);
+        public static readonly Vector2 BOARD_OFFSET = new Vector2(4);
 
         private static readonly Color LIGHT_SQUARE_COLOUR = Color.BlanchedAlmond;
         private static readonly Color DARK_SQUARE_COLOUR = Color.Tan;
@@ -62,6 +67,14 @@ namespace ChessClient {
 
         private static readonly Color LIGHT_GRID_COLOUR = new Color(232, 232, 240);
         private static readonly Color DARK_GRID_COLOUR = new Color(224, 224, 232);
+        private static readonly Color NOTHING_GRID_COLOUR = new Color(228, 228, 236);
+        private static float GridFade = 0.0f;
+
+        private static Color LightGridColour => Color.Lerp(LIGHT_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !colourWon.isNone() ? 0.5f : 0.0f);
+        private static Color DarkGridColour => Color.Lerp(DARK_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !colourWon.isNone() ? 0.5f : 0.0f);
+        public static Color NothingGridColour => Color.Lerp(NOTHING_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !colourWon.isNone() ? 0.5f : 0.0f);
+
+        private static readonly Color GAME_LOST_GRID_COLOUR = new Color(140, 132, 144);
 
         private static readonly Color TL_COLOUR_A = Color.MediumPurple;
         private static readonly Color TL_COLOUR_B = Color.MultiplyAlpha(Color.Multiply(Color.MediumPurple, 0.8f), 2.0f);
@@ -79,8 +92,10 @@ namespace ChessClient {
 
         private static readonly Color GHOST_PIECE_COLOUR = Color.Multiply(Color.White, 0.5f);
 
+        private static readonly Rectangle RECT_EVERYWHERE = new Rectangle(int.MinValue / 2, int.MinValue / 2, int.MaxValue, int.MaxValue);
+
         private static Vector2 BoardDrawPos(Vector2iTL TL) {
-            return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * BOARD_OFFSET.X, TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y);
+            return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X), TL.Y * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y));
         }
 
         public static Rectangle VecRect(Vector2 pos, Vector2 size) => new Rectangle((int)pos.X, (int)pos.Y, (int)size.X, (int)size.Y);
@@ -213,8 +228,8 @@ namespace ChessClient {
 
             GameColour colour = tailVPos.colour;
 
-            Vector2 tp0 = new Vector2(Methods.TVis(tailVPos) * PIECE_SIZE.X * BOARD_OFFSET.X + (tailVPos.X - 4.5f) * PIECE_SIZE.X, tailVPos.L * PIECE_SIZE.Y * BOARD_OFFSET.Y + (tailVPos.Y - 4.5f) * PIECE_SIZE.Y);
-            Vector2 tp3 = new Vector2(Methods.TVis(headVPos) * PIECE_SIZE.X * BOARD_OFFSET.X + (headVPos.X - 4.5f) * PIECE_SIZE.X, headVPos.L * PIECE_SIZE.Y * BOARD_OFFSET.Y + (headVPos.Y - 4.5f) * PIECE_SIZE.Y);
+            Vector2 tp0 = new Vector2(Methods.TVis(tailVPos) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) + (tailVPos.X - 4.5f) * PIECE_SIZE.X, tailVPos.L * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) + (tailVPos.Y - 4.5f) * PIECE_SIZE.Y);
+            Vector2 tp3 = new Vector2(Methods.TVis(headVPos) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) + (headVPos.X - 4.5f) * PIECE_SIZE.X, headVPos.L * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) + (headVPos.Y - 4.5f) * PIECE_SIZE.Y);
 
             Vector2 tdp = tp3 - tp0;
             tdp.Normalize();
@@ -246,10 +261,10 @@ namespace ChessClient {
         // If you make 5.6 million timelines and run out of bar that's on you
         // actually that would probably break **all** the rendering code outright sooooooo...
         public static void RenderThePresent() {
-            float presentPos = gameState.GetPresentPly() * PIECE_SIZE.X * BOARD_OFFSET.X;
+            float presentPos = gameState.GetPresentPly() * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X);
 
-            float minTLPos = (gameState.GetMinTL() - 1) * PIECE_SIZE.Y * BOARD_OFFSET.Y;
-            float maxTLPos = (gameState.GetMaxTL() + 1) * PIECE_SIZE.Y * BOARD_OFFSET.Y;
+            float minTLPos = (gameState.GetMinTL() - 1) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y);
+            float maxTLPos = (gameState.GetMaxTL() + 1) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y);
 
 
             Color presentColour = gameState.GetPresentColour().isWhite() ? WHITE_BOARD_COLOUR_SHADED_A : BLACK_BOARD_COLOUR_SHADED_A;
@@ -287,8 +302,8 @@ namespace ChessClient {
             // Draw the "The Present" label
             Vector2 labelSize = spriteFont.MeasureString("The Present");
 
-            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, maxTLPos + PIECE_SIZE.Y * BOARD_OFFSET.Y), presentTextColour, (float)(Math.PI / 2));
-            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, minTLPos - PIECE_SIZE.Y * BOARD_OFFSET.Y - labelSize.X), presentTextColour, (float)(Math.PI / 2));
+            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, maxTLPos + PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y)), presentTextColour, (float)(Math.PI / 2));
+            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, minTLPos - PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - labelSize.X), presentTextColour, (float)(Math.PI / 2));
         }
 
         // Render a single board, including the border (showing whether it's playable, whose turn it is, etc.)
@@ -297,8 +312,8 @@ namespace ChessClient {
             float borderWidth = gameState.BoardIsPlayable(board.TL) ? 0.5f : 0.125f;
 
             Point boardPos = new Point (
-                (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * (BOARD_SIZE.X / 2 + borderWidth)),
-                (int)(board.TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth))
+                (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) - PIECE_SIZE.X * (BOARD_SIZE.X / 2 + borderWidth)),
+                (int)(board.TL.Y * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth))
             );
             Point boardSize = new Point(
                 (int)(PIECE_SIZE.X * (BOARD_SIZE.X + 2 * borderWidth)),
@@ -325,8 +340,8 @@ namespace ChessClient {
 
                     // Draw the actual square on the board first
                     Rectangle targetRect = new Rectangle(
-                        (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * (BOARD_SIZE.X / 2 - i)),
-                        (int)(board.TL.Y * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 - j)),
+                        (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) - PIECE_SIZE.X * (BOARD_SIZE.X / 2 - i)),
+                        (int)(board.TL.Y * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 - j)),
                         (int)(PIECE_SIZE.X),
                         (int)(PIECE_SIZE.Y));
                     spriteBatch.Draw(sq, targetRect, (i + j) % 2 == 0 ? LIGHT_SQUARE_COLOUR : DARK_SQUARE_COLOUR);
@@ -336,8 +351,8 @@ namespace ChessClient {
                     Vector4iTL xytl = new Vector4iTL(xy, board.TL);
 
                     Vector2i xypos = new Vector2i(
-                        (int)(Methods.TVis(board.TL) * BOARD_OFFSET.X - BOARD_SIZE.X / 2 + i),
-                        (int)(board.TL.Y * BOARD_OFFSET.Y - BOARD_SIZE.Y / 2 + j));
+                        (int)(Methods.TVis(board.TL) * (BOARD_SIZE.X + BOARD_OFFSET.X) - BOARD_SIZE.X / 2 + i),
+                        (int)(board.TL.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - BOARD_SIZE.Y / 2 + j));
 
                     if (xypos == ws_mposi) {
                         hovered = xytl;
@@ -424,26 +439,43 @@ namespace ChessClient {
 
 
         public static void RenderGrid() {
-            int ws_overscan = 2 * Math.Max(Math.Max((int)(ws_i.X / BOARD_OFFSET.X), (int)(ws_i.Y / BOARD_OFFSET.Y)), 10);
+            int ws_overscan = 2 * Math.Max(Math.Max((int)(ws_i.X / (BOARD_SIZE.X + BOARD_OFFSET.X)), (int)(ws_i.Y / (BOARD_SIZE.Y + BOARD_OFFSET.Y))), 10);
 
             for (int t = gameState.GetMinT() - ws_overscan; t <= gameState.GetMaxT() + ws_overscan; ++t) {
                 for (int l = gameState.GetMinTL() - ws_overscan; l <= gameState.GetMaxTL() + ws_overscan; ++l) {
                     Rectangle target = new Rectangle(
-                        (int)((2 * t) * PIECE_SIZE.X * BOARD_OFFSET.X - PIECE_SIZE.X * BOARD_OFFSET.X / 2),
-                        (int)(l * PIECE_SIZE.Y * BOARD_OFFSET.Y - PIECE_SIZE.Y * BOARD_OFFSET.Y / 2),
-                        (int)(2 * PIECE_SIZE.X * BOARD_OFFSET.X),
-                        (int)(PIECE_SIZE.Y * BOARD_OFFSET.Y)
+                        (int)((2 * t) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) - PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) / 2),
+                        (int)(l * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) / 2),
+                        (int)(2 * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X)),
+                        (int)(PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y))
                     );
 
-                    spriteBatch.Draw(sq, target, (t + l) % 2 == 0 ? LIGHT_GRID_COLOUR : DARK_GRID_COLOUR);
+                    Color colourA = Color.Lerp((t + l) % 2 == 0 ? LightGridColour : DarkGridColour, NothingGridColour, GridFade);
+                    Color colourB = Color.Lerp((t + l) % 2 != 0 ? LightGridColour : DarkGridColour, NothingGridColour, GridFade);
+
+                    spriteBatch.Draw(sq, target, colourA);
+
+                    if (t == gameState.GetMaxT5() && l >= gameState.GetMinTL() - 1 && l <= gameState.GetMaxTL() + 1) {
+                        string lString = l.ToString("+#;-#;0") + "L ";
+                        Vector2 strSize = gridFont.MeasureString(lString);
+
+                        spriteBatch.DrawString(gridFont, lString, new Vector2(target.Right - strSize.X, target.Center.Y - strSize.Y / 2), colourB);
+                    }
+
+                    if (l == gameState.GetMaxTL() + 1 && t >= gameState.GetMinT() && t <= gameState.GetMaxT5()) {
+                        string tString = "T" + t.ToString();
+                        Vector2 strSize = gridFont.MeasureString(tString);
+
+                        spriteBatch.DrawString(gridFont, tString, new Vector2(target.Center.X - strSize.X / 2, target.Bottom - (strSize.Y + 32)), colourB);
+                    }
                 }
             }
         }
 
 
         public static Vector2 GetInitialCameraState() {
-            Vector2 cam_min = (new Vector2(gameState.bi_min.X, gameState.bi_min.Y) - new Vector2(0.5f)) * PIECE_SIZE * BOARD_OFFSET;
-            Vector2 cam_max = (new Vector2(gameState.bi_max.X, gameState.bi_max.Y) + new Vector2(0.5f)) * PIECE_SIZE * BOARD_OFFSET;
+            Vector2 cam_min = (new Vector2(gameState.bi_min.X, gameState.bi_min.Y) - new Vector2(0.5f)) * PIECE_SIZE * (BOARD_OFFSET + BOARD_SIZE);
+            Vector2 cam_max = (new Vector2(gameState.bi_max.X, gameState.bi_max.Y) + new Vector2(0.5f)) * PIECE_SIZE * (BOARD_OFFSET + BOARD_SIZE);
 
             return (cam_min + cam_max) / 2;
         }
@@ -460,6 +492,7 @@ namespace ChessClient {
 
                 // Setup sprite fonts, etc
                 spriteFont = fontSystem.GetFont(192);
+                gridFont = gridFontSystem.GetFont(96);
 
 
                 // Update the mouse's position (in piece tiles), clear `hovered` (the mouse may have moved)
@@ -467,7 +500,10 @@ namespace ChessClient {
                 hovered = null;
 
                 // Render all the gizmos and boards in depth order
-                RenderGrid();
+                if (cameraPosition.Z > -1.25f) {
+                    GridFade = -2 * (0.75f + cameraPosition.Z);
+                    RenderGrid();
+                }
 
                 RenderThePresent();
 
