@@ -133,7 +133,7 @@ namespace ChessClient
 
             if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
                 if (submitHovered) {
-                    if (GameStateRenderer.colourWon.isNone() && SubmitIsAllowed) GameStateRenderer.gameState.SubmitMoves();
+                    if (GameStateRenderer.Winners.hasNone() && SubmitIsAllowed) GameStateRenderer.gameState.SubmitMoves();
                 } else if (undoHovered) {
                     if (UndoIsAllowed) GameStateRenderer.gameState.GuiUndoMove();
                 } else {
@@ -199,7 +199,7 @@ namespace ChessClient
             try {
                 GameStateRenderer.gameState.timer.Tick((long)(gameTime.ElapsedGameTime.TotalNanoseconds / 1000));
             } catch (ChessTimeOutException e) {
-                GameStateRenderer.colourWon = e.colour.inverse();
+                GameStateRenderer.colourFlagged = e.colour;
                 GameStateRenderer.gameState.timer.Stop();
 
                 if (whiteInterface is not null && whiteInterface.IsThinking()) {

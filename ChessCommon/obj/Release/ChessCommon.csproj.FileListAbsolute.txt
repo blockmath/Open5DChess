@@ -1,0 +1,7 @@
+C:\Users\devin\Open5DChess\ChessCommon\bin\Release\ChessCommon.exe.config
+C:\Users\devin\Open5DChess\ChessCommon\bin\Release\ChessCommon.exe
+C:\Users\devin\Open5DChess\ChessCommon\bin\Release\ChessCommon.pdb
+C:\Users\devin\Open5DChess\ChessCommon\obj\Release\ChessCommon.csproj.AssemblyReference.cache
+C:\Users\devin\Open5DChess\ChessCommon\obj\Release\ChessCommon.csproj.CoreCompileInputs.cache
+C:\Users\devin\Open5DChess\ChessCommon\obj\Release\ChessCommon.exe
+C:\Users\devin\Open5DChess\ChessCommon\obj\Release\ChessCommon.pdb

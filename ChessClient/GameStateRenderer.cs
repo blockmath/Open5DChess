@@ -17,7 +17,11 @@ namespace ChessClient {
 
         public static GameState gameState;
 
-        public static GameColour colourWon = GameColour.NONE;
+        public static GameColour colourFlagged = GameColour.NONE;
+        public static ColourRights Winners => (colourFlagged.isNone() ?
+                                               gameState.playerHasLost :
+                                               (colourFlagged.isWhite() ? ColourRights.BLACK : ColourRights.WHITE)
+                                              );
 
         public static ColourRights userRights;
 
@@ -70,11 +74,11 @@ namespace ChessClient {
         private static readonly Color NOTHING_GRID_COLOUR = new Color(228, 228, 236);
         private static float GridFade = 0.0f;
 
-        private static Color LightGridColour => Color.Lerp(LIGHT_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !colourWon.isNone() ? 0.5f : 0.0f);
-        private static Color DarkGridColour => Color.Lerp(DARK_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !colourWon.isNone() ? 0.5f : 0.0f);
-        public static Color NothingGridColour => Color.Lerp(NOTHING_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !colourWon.isNone() ? 0.5f : 0.0f);
+        private static Color LightGridColour => Color.Lerp(LIGHT_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !Winners.hasNone() ? 0.5f : 0.0f);
+        private static Color DarkGridColour => Color.Lerp(DARK_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !Winners.hasNone() ? 0.5f : 0.0f);
+        public static Color NothingGridColour => Color.Lerp(NOTHING_GRID_COLOUR, GAME_LOST_GRID_COLOUR, !Winners.hasNone() ? 0.5f : 0.0f);
 
-        private static readonly Color GAME_LOST_GRID_COLOUR = new Color(140, 132, 144);
+        private static readonly Color GAME_LOST_GRID_COLOUR = new Color(132, 132, 144);
 
         private static readonly Color TL_COLOUR_A = Color.MediumPurple;
         private static readonly Color TL_COLOUR_B = Color.MultiplyAlpha(Color.Multiply(Color.MediumPurple, 0.8f), 2.0f);
@@ -284,6 +288,8 @@ namespace ChessClient {
             if (gameState.ColourCanActiveTravel(GameColour.WHITE)) {
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 3)), WHITE_BOARD_COLOUR_SHADED_B);
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 2.5)), WHITE_BOARD_COLOUR_SHADED_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 1.25)), TL_COLOUR_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 1)), TL_COLOUR_A);
             } else {
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 2)), WHITE_BOARD_COLOUR_SHADED_B);
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 1.5)), WHITE_BOARD_COLOUR_SHADED_A);
@@ -293,6 +299,8 @@ namespace ChessClient {
             if (gameState.ColourCanActiveTravel(GameColour.BLACK)) {
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 3)), BLACK_BOARD_COLOUR_SHADED_B);
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 2.5)), BLACK_BOARD_COLOUR_SHADED_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 1.25)), TL_COLOUR_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 1)), TL_COLOUR_A);
             } else {
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 2)), BLACK_BOARD_COLOUR_SHADED_B);
                 spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 1.5)), BLACK_BOARD_COLOUR_SHADED_A);

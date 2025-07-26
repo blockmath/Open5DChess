@@ -1050,7 +1050,7 @@ namespace ChessCommon {
             maxT = Math.Max(maxT, Math.Max(newFromBoard.TL.T, newToBoard.TL.T));
             maxT5 = Math.Max(maxT5, Math.Max(newFromBoard.TL.NextTurn().T, newToBoard.TL.NextTurn().T));
 
-            playerHasLost = PlayerHasLostImpl();
+            playerLossBuf = PlayerHasLostImpl();
 
         }
 
@@ -1064,7 +1064,9 @@ namespace ChessCommon {
 
         public ColourRights playerHasLost { get; private set; }
 
-        public bool PlayerRoyalCaptured => playerHasLost != ColourRights.NONE;
+        private ColourRights playerLossBuf;
+
+        public bool PlayerRoyalCaptured => playerLossBuf != ColourRights.NONE;
 
         public bool CanSubmitMoves() {
             return GetPresentColour() != activePlayer;
@@ -1154,7 +1156,12 @@ namespace ChessCommon {
                 throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
             }
             activePlayer = GetPresentColour();
-            timer.SetTurn(activePlayer);
+            playerHasLost = playerLossBuf;
+            if (!playerHasLost.hasNone()) {
+                timer.Stop();
+            } else {
+                timer.SetTurn(activePlayer);
+            }
         }
 
 
@@ -1190,7 +1197,7 @@ namespace ChessCommon {
                 boards.Remove(imove.target_child);
             }
 
-            playerHasLost = PlayerHasLostImpl();
+            playerLossBuf = PlayerHasLostImpl();
         }
     }
 }

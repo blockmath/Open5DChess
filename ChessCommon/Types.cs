@@ -24,9 +24,9 @@ namespace ChessCommon {
         MOVABL_DRAGON =             0b00001000,
 
         MOVABL_SPEC_PAWN =          0b00000001,
-        MOVABL_SPEC_KNIGHT =        0b00000010,
         MOVABL_SPEC_BRAWN =         0b00000011,
-        MOVABL_SPEC_KING =          0b00000100,
+        MOVABL_SPEC_KNIGHT =        0b00000100,
+        MOVABL_SPEC_KING =          0b00001000,
 
         FLAG_ROYAL =                0b00100000,
         FLAG_SPEC =                 0b00010000,
@@ -177,6 +177,11 @@ namespace ChessCommon {
         public static bool isWhite(this GameColour colour) => colour == GameColour.WHITE;
         public static bool isBlack(this GameColour colour) => colour == GameColour.BLACK;
         public static bool isNone(this GameColour colour) => colour == GameColour.NONE;
+
+
+        public static bool hasWhite(this ColourRights rights) => rights.hasRights(GameColour.WHITE);
+        public static bool hasBlack(this ColourRights rights) => rights.hasRights(GameColour.BLACK);
+        public static bool hasNone(this ColourRights rights) => !(rights.hasWhite() || rights.hasBlack());
 
         public static GameColour inverse(this GameColour colour) => (GameColour)(-(int)colour);
 
