@@ -5,3 +5,9 @@ C:\Users\devin\Open5DChess\ChessCommon\obj\Debug\ChessCommon.pdb
 C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\ChessCommon.dll.config
 C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\ChessCommon.dll
 C:\Users\devin\Open5DChess\ChessCommon\obj\Debug\ChessCommon.dll
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\variants.txt
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Standard-T0.txt
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Standard.txt
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Misc-Miniature.txt
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Misc-GlobalWarming.txt
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Standard-Brawns.txt

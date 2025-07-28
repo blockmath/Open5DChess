@@ -1,0 +1,7 @@
+﻿[Mode 5D]
+[Variant "Misc - Miniature"]
+[ID "misc_mini"]
+[Size 5x5]
+[CastlerPos e1 e5]
+[Promotions QNRBUDS]
+[rnbqk/ppppp/5/PPPPP/RNBQK:0:1:w:Qq]

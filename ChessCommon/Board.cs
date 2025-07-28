@@ -6,32 +6,48 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ChessCommon {
+
+
+    public struct BoundsInfo {
+        public Vector2i BoardSize;
+        public Tuple<Vector2i, Vector2i> KingPos;
+
+        public BoundsInfo(Vector2i boardSize, Tuple<Vector2i, Vector2i> kingPos) {
+            this.BoardSize = boardSize;
+            this.KingPos = kingPos;
+        }
+    }
+
+
+
     public class Board {
 
-        public static readonly string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-        public static Vector2i BoardSize = new Vector2i(8, 8);
+        public Vector2i BoardSize;
+        public Tuple<Vector2i, Vector2i> KingPos;
 
         public Vector2iTL TL;
 
         public Vector2iTL parentTL;
 
-        public Piece[,] pieces = new Piece[BoardSize.X, BoardSize.Y];
+        public Piece[,] pieces;
 
         public CastleRights castleRights;
 
         public Vector2i epTarget;
 
-        public Vector2i moveFrom = null, moveTo = null, moveTravel = null;
+        public Vector2i moveFrom, moveTo, moveTravel;
 
         public ColourRights playerHasLost = ColourRights.NONE;
 
-        public Board(Vector2iTL TL = null, string fen = null) {
-            if (TL is null) TL = Vector2iTL.ORIGIN_WHITE;
-            if (fen is null) fen = STARTING_FEN;
+        public Board(BoundsInfo boundsInfo, Vector2iTL TL, string fen) {
+            BoardSize = boundsInfo.BoardSize;
+            KingPos = boundsInfo.KingPos;
+            pieces = new Piece[BoardSize.X, BoardSize.Y];
+
+            if (TL == Vector2iTL.Null) TL = Vector2iTL.ORIGIN_WHITE;
 
             this.TL = TL;
-            parentTL = null;
+            parentTL = Vector2iTL.Null;
 
             LoadFen(fen);
         }
@@ -41,6 +57,10 @@ namespace ChessCommon {
         }
 
         public Board(Board source, string fen) {
+            BoardSize = source.BoardSize;
+            KingPos = source.KingPos;
+            pieces = new Piece[BoardSize.X, BoardSize.Y];
+
             LoadFen(fen);
 
             TL = source.TL.NextTurn();
@@ -48,10 +68,14 @@ namespace ChessCommon {
         }
 
         public Board(int l, Board source, Piece piece, Vector2i to) {
-            init(l, source, piece, to, null);
+            init(l, source, piece, to, Vector2i.ZERO);
         }
 
         private void init(int l, Board source, Piece piece, Vector2i to, Vector2i from) {
+            BoardSize = source.BoardSize;
+            KingPos = source.KingPos;
+            pieces = new Piece[BoardSize.X, BoardSize.Y];
+
             parentTL = source.TL;
             TL = new Vector2iTL(source.TL.X, l, source.TL.colour).NextTurn();
             castleRights = source.castleRights;
@@ -63,7 +87,7 @@ namespace ChessCommon {
         }
 
         public void RemovePiece(Vector2i from) {
-            if (from is null) {
+            if (from == Vector2i.ZERO) {
                 return;
             } else {
                 pieces[from.X - 1, from.Y - 1] = Piece.NONE;
@@ -71,12 +95,12 @@ namespace ChessCommon {
         }
 
         public void PlacePiece(Piece piece, Vector2i to) {
-            if (to is null) {
+            if (to == Vector2i.ZERO) {
                 return;
             } else {
                 pieces[to.X - 1, to.Y - 1] = piece;
                 // Handle en passant
-                if (to == epTarget && ((piece & Piece.MASK_KIND) == Piece.PIECE_PAWN)) {
+                if (to == epTarget && ((piece & Piece.MASK_KIND) == Piece.PIECE_PAWN || (piece & Piece.MASK_KIND) == Piece.PIECE_BRAWN)) {
                     // holy hell
                     int offset = (int)piece.getColour();
                     // new response just dropped
@@ -91,15 +115,15 @@ namespace ChessCommon {
 
         public void LoadFen(string fen) {
             string[] things = fen.Split(new char[] { ' ' });
-            Vector2i bp = new Vector2i(0, 0);
+            int bpX = 0, bpY = 0;
             foreach (char c in things[0]) {
                 if (c == '/') {
-                    bp.X = 0;
-                    bp.Y++;
+                    bpX = 0;
+                    bpY++;
                 } else if ('1' <= c && c <= '9') {
-                    bp.X += (c - '0');
+                    bpX += (c - '0');
                 } else {
-                    pieces[bp.X++, bp.Y] = Methods.FromChar(c);
+                    pieces[bpX++, bpY] = Methods.FromChar(c);
                 }
             }
 
@@ -116,7 +140,7 @@ namespace ChessCommon {
             if (things[2].Contains("q")) castleRights |= CastleRights.BQ;
 
             if (things[3] == "-") {
-                epTarget = null;
+                epTarget = Vector2i.ZERO;
             } else {
                 epTarget = new Vector2i(things[3][0] - ('a' - 1), things[3][1] - '0');
             }

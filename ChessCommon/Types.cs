@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Security.Policy;
+using System.Text.RegularExpressions;
 
 namespace ChessCommon {
 
@@ -12,6 +13,7 @@ namespace ChessCommon {
     }
 
     public enum Piece : byte {
+        MASK_PIECE =                0b00111111,
         MASK_KIND =                 0b00011111,
         MASK_MOVABL =               0b00001111,
         MASK_SPEC =                 0b00010000,
@@ -72,6 +74,13 @@ namespace ChessCommon {
 
     public static class Methods {
 
+        public static ColourRights GetRights(this GameColour colour) {
+            switch (colour) {
+                case GameColour.NONE: default: return ColourRights.NONE;
+                case GameColour.WHITE: return ColourRights.WHITE;
+                case GameColour.BLACK: return ColourRights.BLACK;
+            }
+        }
 
         public static int TVis(int T, GameColour colour) {
             return (T * 2 + (colour.isBlack() ? 1 : 0));
@@ -140,7 +149,7 @@ namespace ChessCommon {
             return p;
         }
 
-        public static int GetPieceID(Piece piece) {
+        public static int GetPieceID(this Piece piece) {
             switch (piece) {
                 case Piece.NONE: default: return -1;
 
@@ -174,6 +183,26 @@ namespace ChessCommon {
             }
         }
 
+        public static string GetPgnChar(this Piece piece) {
+            switch (piece & Piece.MASK_PIECE) {
+                case Piece.PIECE_PAWN: return "";
+                case Piece.PIECE_KNIGHT: return "N";
+                case Piece.PIECE_BISHOP: return "B";
+                case Piece.PIECE_ROOK: return "R";
+                case Piece.PIECE_QUEEN: return "Q";
+                case Piece.PIECE_KING: return "K";
+
+                case Piece.PIECE_BRAWN: return "W";
+                case Piece.PIECE_UNICORN: return "U";
+                case Piece.PIECE_DRAGON: return "D";
+                case Piece.PIECE_PRINCESS: return "S";
+                case Piece.PIECE_ROYALQUEEN: return "Y";
+                case Piece.PIECE_COMMONKING: return "C";
+
+                default: return "";
+            }
+        }
+
         public static bool isWhite(this GameColour colour) => colour == GameColour.WHITE;
         public static bool isBlack(this GameColour colour) => colour == GameColour.BLACK;
         public static bool isNone(this GameColour colour) => colour == GameColour.NONE;
@@ -197,10 +226,47 @@ namespace ChessCommon {
                 return GameColour.BLACK;
             }
         }
+
+        public static bool IsCastles(this MoveSpec spec) {
+            return spec == MoveSpec.CastlesWK || spec == MoveSpec.CastlesBK || spec == MoveSpec.CastlesWQ || spec == MoveSpec.CastlesBQ;
+        }
+
+        public static bool IsPromotion(this MoveSpec spec) {
+            return spec == MoveSpec.PromoteQueen || spec == MoveSpec.PromotePrincess || spec == MoveSpec.PromoteKnight || spec == MoveSpec.PromoteRook || spec == MoveSpec.PromoteBishop || spec == MoveSpec.PromoteUnicorn || spec == MoveSpec.PromoteDragon;
+        }
+
+        public static MoveSpec GetPromotionSpec(this Piece piece) {
+            switch (piece & Piece.MASK_KIND) {
+                case Piece.PIECE_PAWN:
+                    return MoveSpec.PromotePawn;
+                case Piece.PIECE_KNIGHT:
+                    return MoveSpec.PromoteKnight;
+                case Piece.PIECE_ROOK:
+                    return MoveSpec.PromoteRook;
+                case Piece.PIECE_BISHOP:
+                    return MoveSpec.PromoteBishop;
+                case Piece.PIECE_UNICORN:
+                    return MoveSpec.PromoteUnicorn;
+                case Piece.PIECE_DRAGON:
+                    return MoveSpec.PromoteDragon;
+                case Piece.PIECE_PRINCESS:
+                    return MoveSpec.PromotePrincess;
+                case Piece.PIECE_QUEEN:
+                    return MoveSpec.PromoteQueen;
+                case Piece.PIECE_KING:
+                    return MoveSpec.PromoteCommonKing;
+                case Piece.PIECE_BRAWN:
+                    return MoveSpec.PromoteBrawn;
+                default:
+                    return MoveSpec.None;
+            }
+        }
     }
 
     public enum MoveSpec : byte {
         None = 0,
+
+        PromotePawn,
         PromoteKnight,
         PromoteRook,
         PromoteBishop,
@@ -208,18 +274,18 @@ namespace ChessCommon {
         PromoteDragon,
         PromotePrincess,
         PromoteQueen,
+        PromoteCommonKing,
+        PromoteBrawn,
 
         DoublePush,
         EnPassant,
 
         ForceSkipTurn,
 
-        IsCastles = 0b00100000,
-
-        CastlesWK = 0b00100001,
-        CastlesWQ = 0b00100010,
-        CastlesBK = 0b00100011,
-        CastlesBQ = 0b00100100
+        CastlesWK,
+        CastlesWQ,
+        CastlesBK,
+        CastlesBQ
     }
 
 
@@ -252,10 +318,6 @@ namespace ChessCommon {
             return targets;
         }
 
-        public bool isCastles() {
-            return spec == MoveSpec.CastlesWK || spec == MoveSpec.CastlesWQ || spec == MoveSpec.CastlesBK || spec == MoveSpec.CastlesBQ;
-        }
-
 
         public static bool operator ==(Move a, Move b) {
             return a.Equals(b);
@@ -278,6 +340,18 @@ namespace ChessCommon {
             hashCode = hashCode * -1521134295 + EqualityComparer<Vector4iTL>.Default.GetHashCode(target);
             hashCode = hashCode * -1521134295 + EqualityComparer<MoveSpec>.Default.GetHashCode(spec);
             return hashCode;
+        }
+
+        public override string ToString() {
+            return "{[" + origin.ToString() + "][" + target.ToString() + "][" + spec.ToString() + "]}";
+        }
+
+        public Move(string str) {
+            Match match = Regex.Match(str, "{\\[(.*?)]\\[(.*?)]\\[(.*?)]}");
+
+            origin = new Vector4iTL(match.Groups[1].Value);
+            target = new Vector4iTL(match.Groups[2].Value);
+            MoveSpec.TryParse(match.Groups[3].Value, out spec);
         }
     }
 

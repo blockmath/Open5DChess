@@ -1,0 +1,7 @@
+﻿[Mode 5D]
+[Variant "Misc - Global Warming"]
+[ID "misc_globalwarming"]
+[Size 1x1]
+[CastlerPos a1 a1]
+[Promotions -]
+[1:0:1:w:-]

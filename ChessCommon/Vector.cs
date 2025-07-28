@@ -4,10 +4,41 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ChessCommon {
-    public class Vector2i {
+
+    public struct Vector1i {
+        public int X;
+
+        public Vector1i(int x) {
+            X = x;
+        }
+    }
+
+
+    public struct Vector1iTL {
+        public int X;
+        public int T => X;
+
+        public GameColour colour;
+
+        public Vector1iTL(int x, GameColour colour) {
+            X = x;
+            this.colour = colour;
+        }
+
+        public Vector1iTL NextTurn() {
+            if (colour.isWhite()) {
+                return new Vector1iTL(X, GameColour.BLACK);
+            } else {
+                return new Vector1iTL(X + 1, GameColour.WHITE);
+            }
+        }
+    }
+
+    public struct Vector2i {
         public int X;
         public int Y;
 
@@ -27,8 +58,8 @@ namespace ChessCommon {
             Y = o.Y;
         }
 
-        public Vector2i(string s) {
-            Y = 9 - (s[s.Length - 1] - '0');
+        public Vector2i(string s, BoundsInfo bi) {
+            Y = (bi.BoardSize.Y + 1) - (s[s.Length - 1] - '0');
             X = s[s.Length - 2] - ('a' - 1);
         }
 
@@ -61,7 +92,7 @@ namespace ChessCommon {
         }
 
         public static bool operator ==(Vector2i a, Vector2i b) {
-            return !(a is null) && !(b is null) && a.X == b.X && a.Y == b.Y;
+            return a.X == b.X && a.Y == b.Y;
         }
 
         public static bool operator !=(Vector2i a, Vector2i b) {
@@ -79,45 +110,59 @@ namespace ChessCommon {
             hashCode = hashCode * -1521134295 + Y.GetHashCode();
             return hashCode;
         }
-        public override string ToString() {
-            return "<" + X + ", " + Y + ">";
+        public string ToString(BoundsInfo bi) {
+            return ((char)(('a' - 1) + X)).ToString() + ((char)('1' + (bi.BoardSize.Y - Y))).ToString();
         }
     }
 
-    public class Vector2iTL : Vector2i {
+    public struct Vector2iTL {
+
+        public static readonly Vector2iTL Null = new Vector2iTL(int.MinValue, int.MinValue, GameColour.NONE);
+
         public GameColour colour;
+        
+        
+        public int X;
+        public int Y;
 
         public int T => X;
         public int L => Y;
 
+        public Vector1iTL TC => new Vector1iTL(T, colour);
 
         public Vector2i vpos => new Vector2i(2 * X + (colour.isWhite() ? 0 : 1), Y);
 
         public static readonly Vector2iTL ORIGIN_WHITE = new Vector2iTL(1, 0, GameColour.WHITE);
 
-        public Vector2iTL(int x, int y, GameColour colour) : base(x, y) { 
+        public Vector2iTL(int x, int y, GameColour colour) {
+            X = x;
+            Y = y;
             this.colour = colour;
         }
 
-        public Vector2iTL(Vector2i vec, GameColour colour) : base(vec.X, vec.Y) {
+        public Vector2iTL(Vector2i vec, GameColour colour) {
+            X = vec.X;
+            Y = vec.Y;
             this.colour = colour;
         }
 
-        public Vector2iTL(Vector2iTL o) : base(o) {
+        public Vector2iTL(Vector2iTL o) {
+            X = o.X;
+            Y = o.Y;
             colour = o.colour;
         }
 
-        public Vector2iTL(string s, GameColour colour) : base(0, 0) {
-            Y = int.Parse(s.Split(new char[] { 'T' }, 2)[0]);
+        public Vector2iTL(string s, GameColour colour) {
             X = int.Parse(s.Split(new char[] { 'T' }, 2)[1]);
+            Y = int.Parse(s.Split(new char[] { 'T' }, 2)[0]);
             this.colour = colour;
         }
 
         public Vector2iTL NextTurn() {
             if (colour.isWhite()) {
-                return new Vector2iTL(this, GameColour.BLACK);
+                return new Vector2iTL(X, Y, GameColour.BLACK);
             } else {
-                return new Vector2iTL(this, GameColour.WHITE) + Vector2i.AXIS_X;
+                return new Vector2iTL(X, Y, GameColour.WHITE) + Vector2i.AXIS_X;
             }
         }
         public static Vector2iTL operator +(Vector2iTL a, Vector2i b) {
@@ -136,20 +181,8 @@ namespace ChessCommon {
             return new Vector2i(a.X - b.X, a.Y - b.Y);
         }
 
-        public static Vector2iTL operator *(Vector2iTL a, Vector2i b) {
-            throw new NotSupportedException("Vector2iTL is an absolute coordinate system. Use Vector2i for relative vector math.");
-        }
-
-        public static Vector2iTL operator *(Vector2iTL a, int b) {
-            throw new NotSupportedException("Vector2iTL is an absolute coordinate system. Use Vector2i for relative vector math.");
-        }
-
-        public static Vector2iTL operator /(Vector2iTL a, Vector2i b) {
-            throw new NotSupportedException("Vector2iTL is an absolute coordinate system. Use Vector2i for relative vector math.");
-        }
-
         public static bool operator ==(Vector2iTL a, Vector2iTL b) {
-            return !(a is null) && !(b is null) && a.X == b.X && a.Y == b.Y && a.colour == b.colour;
+            return a.X == b.X && a.Y == b.Y && a.colour == b.colour;
         }
         public static bool operator !=(Vector2iTL a, Vector2iTL b) {
             return !(a == b);
@@ -172,17 +205,13 @@ namespace ChessCommon {
     }
 
 
-    public class Vector4i {
+    public struct Vector4i {
         public static readonly Vector4i ZERO = new Vector4i(0, 0, 0, 0);
 
         public int X;
         public int Y;
         public int T;
         public int L;
-
-        protected Vector4i() {
-            X = Y = T = L = 0;
-        }
 
         public Vector4i(int x, int y, int t, int l) {
             X = x;
@@ -231,7 +260,7 @@ namespace ChessCommon {
         }
 
         public static bool operator ==(Vector4i a, Vector4i b) {
-            return (a is null && b is null) || (!(a is null) && !(b is null) && a.X == b.X && a.Y == b.Y && a.T == b.T && a.L == b.L);
+            return (a.X == b.X && a.Y == b.Y && a.T == b.T && a.L == b.L);
         }
 
         public static bool operator !=(Vector4i a, Vector4i b) {
@@ -257,18 +286,32 @@ namespace ChessCommon {
         }
     }
 
-    public class Vector4iTL : Vector4i {
+    public struct Vector4iTL {
+        public static readonly Vector4iTL Null = new Vector4iTL(int.MinValue, int.MinValue, int.MinValue, int.MinValue, GameColour.NONE);
 
         public GameColour colour;
+
+        public int X;
+        public int Y;
+        public int T;
+        public int L;
 
         public Vector2i XY => new Vector2i(X, Y);
         public Vector2iTL TL => new Vector2iTL(T, L, colour);
 
-        public Vector4iTL(int x, int y, int t, int l, GameColour colour) : base(x, y, t, l) {
+        public Vector4iTL(int x, int y, int t, int l, GameColour colour) {
+            X = x;
+            Y = y;
+            T = t;
+            L = l;
             this.colour = colour;
         }
 
-        protected Vector4iTL(Vector4i pos, GameColour colour) : base(pos.X, pos.Y, pos.T, pos.L) {
+        public Vector4iTL(Vector4i pos, GameColour colour) {
+            X = pos.X;
+            Y = pos.Y;
+            T = pos.T;
+            L = pos.L;
             this.colour = colour;
         }
 
@@ -289,9 +332,6 @@ namespace ChessCommon {
         }
 
         public static Vector4iTL operator +(Vector4iTL a, Vector4i b) {
-            if (b is Vector4iTL) {
-                throw new NotSupportedException("Vector4iTL is an absolute coordinate system. Use Vector4i for relative vector math.");
-            }
             return new Vector4iTL(a.X + b.X, a.Y + b.Y, a.T + b.T, a.L + b.L, a.colour);
         }
 
@@ -313,21 +353,8 @@ namespace ChessCommon {
         }
 
 
-        public static Vector4iTL operator *(Vector4iTL a, Vector4i b) {
-            throw new NotSupportedException("Vector4iTL is an absolute coordinate system. Use Vector4i for relative vector math.");
-        }
-
-        public static Vector4i operator *(Vector4iTL a, int b) {
-            throw new NotSupportedException("Vector4iTL is an absolute coordinate system. Use Vector4i for relative vector math.");
-        }
-
-        public static Vector4i operator /(Vector4iTL a, Vector4i b) {
-            throw new NotSupportedException("Vector4iTL is an absolute coordinate system. Use Vector4i for relative vector math.");
-        }
-
-
         public static bool operator ==(Vector4iTL a, Vector4iTL b) {
-            return (a is null && b is null) || (!(a is null) && !(b is null) && a.X == b.X && a.Y == b.Y && a.T == b.T && a.L == b.L && a.colour == b.colour);
+            return (a.X == b.X && a.Y == b.Y && a.T == b.T && a.L == b.L && a.colour == b.colour);
         }
 
         public static bool operator !=(Vector4iTL a, Vector4iTL b) {
@@ -351,6 +378,22 @@ namespace ChessCommon {
 
         public override string ToString() {
             return "<" + X + ", " + Y + ", " + T + (colour.isWhite() ? "" : ".5") + ", " + L + ">";
+        }
+
+        public Vector4iTL(string str) {
+            Match match = Regex.Match(str, "<(\\d+), (\\d+), (\\d+)(\\.5)?, (\\d+)>");
+
+            X = int.Parse(match.Groups[1].Value);
+            Y = int.Parse(match.Groups[2].Value);
+            T = int.Parse(match.Groups[3].Value);
+
+            if (match.Groups[4].Value == ".5") {
+                colour = GameColour.BLACK;
+                L = int.Parse(match.Groups[5].Value);
+            } else {
+                colour = GameColour.WHITE;
+                L = int.Parse(match.Groups[5].Value);
+            }
         }
     }
 }

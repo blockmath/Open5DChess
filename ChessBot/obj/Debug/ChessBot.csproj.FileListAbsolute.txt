@@ -21,3 +21,9 @@ C:\Users\devin\Open5DChess\ChessBot\bin\Debug\ChessBot.dll
 C:\Users\devin\Open5DChess\ChessBot\bin\Debug\ChessCommon.dll
 C:\Users\devin\Open5DChess\ChessBot\bin\Debug\ChessCommon.dll.config
 C:\Users\devin\Open5DChess\ChessBot\obj\Debug\ChessBot.dll
+C:\Users\devin\Open5DChess\ChessBot\bin\Debug\variants.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Debug\Variants\Standard-T0.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Debug\Variants\Standard.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Debug\Variants\Misc-Miniature.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Debug\Variants\Misc-GlobalWarming.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Debug\Variants\Standard-Brawns.txt

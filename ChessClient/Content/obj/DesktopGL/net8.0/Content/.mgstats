@@ -1,6 +1,0 @@
-Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"C:/Users/devin/Open5DChess/ChessClient/Content/arrow.png","C:/Users/devin/Open5DChess/ChessClient/Content/bin/DesktopGL/Content/arrow.xnb","TextureProcessor","Texture2DContent",8468,1048661,0.0949082
-"C:/Users/devin/Open5DChess/ChessClient/Content/circle.png","C:/Users/devin/Open5DChess/ChessClient/Content/bin/DesktopGL/Content/circle.xnb","TextureProcessor","Texture2DContent",20920,4194389,0.1442887
-"C:/Users/devin/Open5DChess/ChessClient/Content/msaa.fx","C:/Users/devin/Open5DChess/ChessClient/Content/bin/DesktopGL/Content/msaa.xnb","EffectProcessor","CompiledEffectContent",2692,1636,0.1714091
-"C:/Users/devin/Open5DChess/ChessClient/Content/pieces.png","C:/Users/devin/Open5DChess/ChessClient/Content/bin/DesktopGL/Content/pieces.xnb","TextureProcessor","Texture2DContent",262765,25165909,0.4488002
-"C:/Users/devin/Open5DChess/ChessClient/Content/sq.png","C:/Users/devin/Open5DChess/ChessClient/Content/bin/DesktopGL/Content/sq.xnb","TextureProcessor","Texture2DContent",72,89,0.0010644

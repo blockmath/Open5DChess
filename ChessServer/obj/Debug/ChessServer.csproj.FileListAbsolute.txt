@@ -1,0 +1,17 @@
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\variants.txt
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\Variants\Misc-GlobalWarming.txt
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\Variants\Misc-Miniature.txt
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\Variants\Standard-Brawns.txt
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\Variants\Standard-T0.txt
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\Variants\Standard.txt
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\ChessServer.dll.config
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\ChessServer.dll
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\ChessServer.pdb
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\ChessCommon.dll
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\ChessCommon.pdb
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\ChessCommon.dll.config
+C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessServer.csproj.AssemblyReference.cache
+C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessServer.csproj.CoreCompileInputs.cache
+C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessSer.FBCBF35F.Up2Date
+C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessServer.dll
+C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessServer.pdb

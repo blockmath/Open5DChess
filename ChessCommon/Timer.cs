@@ -25,8 +25,8 @@ namespace ChessCommon {
     }
 
     public class Timer {
-        public long us_white { get; private set; }
-        public long us_black { get; private set; }
+        public long us_white;
+        public long us_black;
 
         public long us_turn_started { get; private set; }
 

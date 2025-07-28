@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 namespace ChessCommon {
     public class GameState {
 
-        public List<MoveSpec> allowedPromotions = new List<MoveSpec> {
+        public static List<MoveSpec> allowedPromotions = new List<MoveSpec> {
             MoveSpec.PromoteKnight,
             MoveSpec.PromoteRook,
             MoveSpec.PromoteBishop,
@@ -23,34 +24,64 @@ namespace ChessCommon {
             MoveSpec.PromoteQueen
         };
 
-        public static readonly string STANDARD_PGN = 
-            "[Mode \"5D\"]\n" +
-            "[Size \"8x8\"]\n" +
-            "[Variant \"Standard\"]\n" +
-            "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR:0:1:w]";
+        public static Dictionary<string, Tuple<string, string>> PgnDict;
 
-        public static readonly string STANDARD_T0_PGN =
-            "[Mode \"5D\"]\n" +
-            "[Size \"8x8\"]\n" +
-            "[Variant \"Standard - Turn Zero\"]\n" +
-            "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR:0:0:b]\n" +
-            "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR:0:1:w]";
+        static GameState() {
+            LoadPgnFiles();
 
-        public static readonly string TEST_PGN =
-            "[Mode \"5D\"]\n" +
-            "[Size \"8x8\"]\n" +
-            "[Variant \"Standard\"]\n" +
-            "[rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR:0:1:w]\n" +
-            "1.(0T1)e2e4 / (0T1)e7e5\n" +
-            "2.(0T2)Ng1>>(0T1)g3 / (1T1)Ng8>(0T1)g6 (0T2)f7f6\n" +
-            "3.(0T3)Qd1>>(0T1)f3 / (0T3)Bf8b4 (2T1)Ng8h6\n" +
-            "4.(0T4)f2f4 / (0T4)Bb4d2\n" +
-            "5.(0T5)Bc1d2 / (0T5)Ng8h6\n" +
-            "6.(0T6)Bf1>>(0T1)f6 (1T2)Ng3>(0T4)g3 / (1T2)c7c5";
+            SetupStepTables();
+        }
+
+        private static void LoadPgnFiles() {
+            PgnDict = new Dictionary<string, Tuple<string, string>>();
+
+            string[] variantFileSearchPaths = File.ReadAllLines("variants.txt");
+
+            List<string> variantFilePaths = new List<string>();
+
+            foreach (string variantFileSearchPath in variantFileSearchPaths) {
+                variantFilePaths.AddRange(Directory.GetFiles(".", variantFileSearchPath));
+            }
+
+            foreach (string variantFilePath in variantFilePaths) {
+                if (variantFilePath.Trim() == "") continue;
+
+                string variant = File.ReadAllText(variantFilePath);
+
+                List<string> things = ParsePgnToList(variant);
+
+                string name = "Unknown", id = "";
+
+                int sp = 0;
+                while (sp < things.Count && (name == "Unknown" || id == "")) {
+                    string line = things[sp++];
+
+                    if (line[0] == '[') {
+                        List<string> slin = new List<string>(line.Substring(1, line.Length - 2).Split(' '));
+
+                        switch (slin[0]) {
+                            case "Variant":
+                                name = slin[1].Trim('"');
+                                break;
+                            case "ID":
+                                id = slin[1].Trim('"');
+                                break;
+                            default: break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                PgnDict.Add(id, new Tuple<string, string>(name, variant));
+            }
+        }
+
 
         public GameState() {
-            //LoadPgn(TEST_PGN);
-            LoadPgn(STANDARD_T0_PGN);
+            LoadPgn("standard_brawns");
+            //LoadPgn("misc_mini");
+            //LoadPgn("misc_globalwarming");
             activePlayer = GetPresentColour();
         }
 
@@ -65,11 +96,63 @@ namespace ChessCommon {
         public Vector2i bi_min { get; private set; }
         public Vector2i bi_max { get; private set; }
 
-        public void LoadPgn(string pgn) {
+        private static List<string> ParsePgnToList(string text) {
+            List<string> presult = new List<string>(text.Split('\n'));
+            List<string> result = new List<string>();
+
+            for (int i = 0; i < presult.Count; ++i) {
+                string ps = presult[i].Trim();
+                if (ps != "") {
+                    result.Add(ps);
+                }
+            }
+
+            return result;
+        }
+
+        public static List<string> SplitUnquotedWhitespace(string text) {
+            List<string> result = new List<string>();
+
+            bool inQuotes = false;
+            bool inEscape = false;
+
+            string current = "";
+
+            foreach (char c in text) {
+                if (inEscape) {
+                    current += c;
+                } else if (c == '\\') {
+                    inEscape = true;
+                } else if (c == '"') {
+                    inQuotes = !inQuotes;
+                    current += c;
+                } else if (char.IsWhiteSpace(c)) {
+                    result.Add(current);
+                    current = "";
+                } else {
+                    current += c;
+                }
+            }
+
+            result.Add(current);
+
+
+            return result;
+        }
+
+        public void LoadPgn(string id) {
+            LoadPgnStr(PgnDict[id].Item2);
+        }
+
+        public void LoadPgnStr(string pgn) {
+            initialPgn = pgn;
+
             bi_min = Vector2i.INFINITY;
             bi_max = Vector2i.INFINITY * -1;
 
-            List<string> things = new List<string>(pgn.Split('\n'));
+            timer = null;
+
+            List<string> things = ParsePgnToList(pgn);
 
             int sp = 0;
 
@@ -81,11 +164,11 @@ namespace ChessCommon {
                 string line = things[sp++];
 
                 if (line[0] == '[') {
-                    List<string> slin = new List<string>(line.Substring(1, line.Length - 2).Split(' '));
+                    List<string> slin = SplitUnquotedWhitespace(line.Trim(new char[]{'[', ']'}));
 
                     switch (slin[0]) {
                         case "Mode":
-                            if (slin[1] != "\"5D\"") {
+                            if (slin[1].Trim('"') != "5D") {
                                 throw new NotSupportedException("Non-5D modes are not supported");
                             }
                             break;
@@ -93,23 +176,44 @@ namespace ChessCommon {
                         case "Date":
                         case "Time":
                         case "White":
+                        case "ID":
                             break;
                         case "Board":
                         case "Variant":
                             // These are in a different case because I might want to use them someday whereas the others are completely useless
                             break;
+                        case "TimeControls":
+                            Match timeMatch = Regex.Match(slin[1].Trim('"'), "(\\d+)\\+(\\d+)");
+                            timer = new Timer(long.Parse(timeMatch.Groups[1].Value) * 60_000_000L, long.Parse(timeMatch.Groups[2].Value) * 1_000_000L);
+                            break;
                         case "Size":
-                            if (slin[1] != "\"8x8\"") {
-                                throw new NotSupportedException("Non-8x8 sizes are not supported");
+                            Match sizeMatch = Regex.Match(slin[1].Trim('"'), "(\\d+)x(\\d+)");
+                            boundsInfo.BoardSize.X = int.Parse(sizeMatch.Groups[1].Value);
+                            boundsInfo.BoardSize.Y = int.Parse(sizeMatch.Groups[2].Value);
+                            break;
+                        case "KingPos":
+                        case "CastlePos":
+                        case "CastlerPos":
+                            string wkPos = slin[1].Trim('"');
+                            string bkPos = slin[2].Trim('"');
+                            boundsInfo.KingPos = new Tuple<Vector2i, Vector2i>(new Vector2i(wkPos, boundsInfo), new Vector2i(bkPos, boundsInfo));
+                            break;
+                        case "Promotions":
+                            allowedPromotions.Clear();
+                            if (slin[1] == "-") {
+                                break;
+                            }
+                            foreach (char c in slin[1]) {
+                                Piece piece = Methods.FromChar(c);
+                                allowedPromotions.Add(piece.GetPromotionSpec());
                             }
                             break;
                         default: // Assume it's a FEN string for a single-board setup
                             List<string> lfen = new List<string>(slin[0].Replace("*", "").Split(':'));
                             Vector2iTL bpos = new Vector2iTL(int.Parse(lfen[2]), int.Parse(lfen[1]), lfen[3] == "w" ? GameColour.WHITE : GameColour.BLACK);
                             fen.Add(
-                                // Not sure what order the turn and timeline are in lmao
                                 bpos,
-                                lfen[0] + " " + lfen[3] + " KQkq - 0 1"
+                                lfen[0] + " " + lfen[3] + " " + lfen[4] + " - 0 1"
                             );
                             bi_min = bpos.vpos.Min(bi_min);
                             bi_max = bpos.vpos.Max(bi_max);
@@ -169,14 +273,14 @@ namespace ChessCommon {
                 if (boards.ContainsKey(prev)) {
                     board = new Board(boards[prev], kv.Value);
                 } else {
-                    board = new Board(kv.Key, kv.Value);
+                    board = new Board(boundsInfo, kv.Key, kv.Value);
                 }
                 boards.Add(kv.Key, board);
             }
         }
 
         public void MakeMoveStr(string move, GameColour colour) {
-            Match castlesmatch = Regex.Match(move, "^[^()]*\\((.*?)\\)(O-O|O-O-O)([+!?#])*$");
+            Match castlesmatch = Regex.Match(move, "^[^()]*\\((.*?)\\)(O-O|O-O-O)(?:[+!?#])*$");
             if (castlesmatch.Success) {
 
                 string tlstr = castlesmatch.Groups[1].Value;
@@ -187,22 +291,22 @@ namespace ChessCommon {
 
 
                 if (colour.isWhite()) {
-                    XY = new Vector2i("e1");
+                    XY = castlesOrigW;
                 } else {
-                    XY = new Vector2i("e8");
+                    XY = castlesOrigB;
                 }
 
                 if (castlesstr == "O-O") {
                     if (colour.isWhite()) {
-                        XY2 = new Vector2i("g1");
+                        XY2 = castlesTgtWK;
                     } else {
-                        XY2 = new Vector2i("g8");
+                        XY2 = castlesTgtBK;
                     }
                 } else {
                     if (colour.isWhite()) {
-                        XY2 = new Vector2i("c1");
+                        XY2 = castlesTgtWQ;
                     } else {
-                        XY2 = new Vector2i("c8");
+                        XY2 = castlesTgtBQ;
                     }
                 }
 
@@ -210,7 +314,7 @@ namespace ChessCommon {
 
             } else {
 
-                Match mstrmatch = Regex.Match(move, "^[^()]*\\((.*?)\\)([A-Z]?[a-h][1-8])x?(.*?)(=[A-Z])?([+!?#])*$");
+                Match mstrmatch = Regex.Match(move, "^[^()]*\\((.*?)\\)([A-Z]?[a-i][1-9])x?(.*?)(=[A-Z])?(?:[+!?#])*$");
 
                 string tlstr = mstrmatch.Groups[1].Value;
                 string xystr = mstrmatch.Groups[2].Value;
@@ -220,11 +324,13 @@ namespace ChessCommon {
                 string tlstr2;
                 string xystr2;
 
+                string promotionstr;
+
                 Vector2iTL TL = new Vector2iTL(tlstr, colour);
-                Vector2i XY = new Vector2i(xystr);
+                Vector2i XY = new Vector2i(xystr, boundsInfo);
 
                 if (mstr2[0] == '>') {
-                    Match mstrmatch2 = Regex.Match(mstr2, "^>+\\((.*?)\\)([A-Z]?[a-h][1-8])$");
+                    Match mstrmatch2 = Regex.Match(mstr2, "^>+\\((.*?)\\)([A-Z]?[a-i][1-9])$");
 
                     tlstr2 = mstrmatch2.Groups[1].Value;
                     xystr2 = mstrmatch2.Groups[2].Value;
@@ -234,21 +340,110 @@ namespace ChessCommon {
                 }
 
                 Vector2iTL TL2 = new Vector2iTL(tlstr2, colour);
-                Vector2i XY2 = new Vector2i(xystr2);
+                Vector2i XY2 = new Vector2i(xystr2, boundsInfo);
 
-                MakeMove(new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL2)));
+                if (mstrmatch.Groups.Count > 4) {
+                    promotionstr = mstrmatch.Groups[4].Value;
+                } else {
+                    promotionstr = "";
+                }
+
+                Move preliminaryMove = new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL2));
+
+                if (MoveShouldDoublePush(preliminaryMove)) {
+                    preliminaryMove = new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL2), MoveSpec.DoublePush);
+                } else if (MoveShouldEnPassant(preliminaryMove)) {
+                    preliminaryMove = new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL2), MoveSpec.EnPassant);
+                } else if (MoveShouldPromote(preliminaryMove)) {
+                    char pc = promotionstr[1];
+                    preliminaryMove = new Move(new Vector4iTL(XY, TL), new Vector4iTL(XY2, TL2), Methods.FromChar(pc).GetPromotionSpec());
+                }
+
+                MakeMove(preliminaryMove);
 
             }
         }
+
+        public string MoveToString(Move move) {
+            if (move.origin.TL == move.target.TL) {
+                return string.Format("({1}T{0})", move.origin.T, move.origin.L) + GetPiece(move.origin).GetPgnChar() + move.origin.XY.ToString() + (MoveShouldCapture(move) ? "x" : "") + move.target.XY.ToString();
+            } else {
+                string sep = (move.origin.L == move.target.L) ? ">>" : ">";
+                return string.Format("({1}T{0})", move.origin.T, move.origin.L) + GetPiece(move.origin).GetPgnChar() + move.origin.XY.ToString() + sep + (MoveShouldCapture(move) ? "x" : "") + string.Format("({1}T{0})", move.target.T, move.target.L) + move.target.XY.ToString();
+            }
+        }
+
+        public static string GetPgnMetadata(string pgn) {
+            string pgn_metadata = "";
+
+            List<string> things = ParsePgnToList(pgn);
+
+            int sp = 0;
+
+            Dictionary<Vector2iTL, string> fen = new Dictionary<Vector2iTL, string>();
+
+            while (sp < things.Count) {
+                string line = things[sp++];
+
+                if (line[0] == '[') {
+                    pgn_metadata += line + "\n";
+                } else {
+                    break;
+                }
+            }
+
+            return pgn_metadata;
+        }
+
+        public string GetPgn() {
+            string pgn = GetPgnMetadata(initialPgn) + "\n1.";
+
+            Vector1iTL mt = new Vector1iTL(1, GameColour.WHITE);
+
+            string compound_move = "";
+
+            foreach (IMove move in moveStack.Reverse()) {
+
+                if (mt.colour != move.getColour()) {
+
+                    if (mt.colour.isWhite()) {
+                        pgn += "\n" + mt.T.ToString() + "." + compound_move;
+                    } else {
+                        pgn += " /" + compound_move;
+                    }
+
+                    compound_move = "";
+
+                    mt = mt.NextTurn();
+                }
+                
+
+                compound_move += " " + MoveToString(move);
+            }
+
+            if (mt.colour.isWhite()) {
+                pgn += "\n" + mt.T.ToString() + "." + compound_move;
+            } else {
+                pgn += " /" + compound_move;
+            }
+
+            return pgn;
+        }
+
+
 
         public GameState Clone() {
             return new GameState(this);
         }
 
+        public string initialPgn { get; private set; }
+
+        public BoundsInfo boundsInfo = new BoundsInfo(new Vector2i(8, 8), new Tuple<Vector2i, Vector2i>(new Vector2i(5, 8), new Vector2i(5, 1)));
+
         public Dictionary<Vector2iTL, Board> boards;
         public GameColour activePlayer;
         public Timer timer;
-        public TimerView timerView => new TimerView(timer);
+        public TimerView timerView => timer is null ? null : new TimerView(timer);
 
         public void StartWithTimer(Timer timer) {
             this.timer = timer;
@@ -327,7 +522,7 @@ namespace ChessCommon {
 
         
         public Board GetBoard(Vector2iTL TL) {
-            if (TL is null) return null;
+            if (TL == Vector2iTL.Null) return null;
 
             return boards[TL];
         }
@@ -395,10 +590,6 @@ namespace ChessCommon {
                         knightSteps.Add(s);
                     }
                 }
-        }
-
-        static GameState() {
-            SetupStepTables();
         }
 
 
@@ -485,23 +676,24 @@ namespace ChessCommon {
         }
 
 
-        public static readonly Vector2i castlesTgtWK = new Vector2i("g1");
-        public static readonly Vector2i castlesTgtWQ = new Vector2i("c1");
-        public static readonly Vector2i castlesTgtBK = new Vector2i("g8");
-        public static readonly Vector2i castlesTgtBQ = new Vector2i("c8");
-        
-        public static readonly Vector2i castlesOrigW = new Vector2i("e1");
-        public static readonly Vector2i castlesOrigB = new Vector2i("e8");
-        
-        public static readonly Vector2i castlesRookWK = new Vector2i("h1");
-        public static readonly Vector2i castlesRookWQ = new Vector2i("a1");
-        public static readonly Vector2i castlesRookBK = new Vector2i("h8");
-        public static readonly Vector2i castlesRookBQ = new Vector2i("a8");
 
-        public static readonly Vector2i castlesRTWK = new Vector2i("f1");
-        public static readonly Vector2i castlesRTWQ = new Vector2i("d1");
-        public static readonly Vector2i castlesRTBK = new Vector2i("f8");
-        public static readonly Vector2i castlesRTBQ = new Vector2i("d8");
+        public Vector2i castlesOrigW => boundsInfo.KingPos.Item1;
+        public Vector2i castlesOrigB => boundsInfo.KingPos.Item2;
+
+        public Vector2i castlesTgtWK => castlesOrigW + new Vector2i(+2, 0);
+        public Vector2i castlesTgtWQ => castlesOrigW + new Vector2i(-2, 0);
+        public Vector2i castlesTgtBK => castlesOrigB + new Vector2i(+2, 0);
+        public Vector2i castlesTgtBQ => castlesOrigB + new Vector2i(-2, 0);
+
+        public Vector2i castlesRookWK => new Vector2i(boundsInfo.BoardSize.X, castlesOrigW.Y);
+        public Vector2i castlesRookWQ => new Vector2i(1, castlesOrigW.Y);
+        public Vector2i castlesRookBK => new Vector2i(boundsInfo.BoardSize.X, castlesOrigB.Y);
+        public Vector2i castlesRookBQ => new Vector2i(1, castlesOrigB.Y);
+
+        public Vector2i castlesRTWK => castlesOrigW + new Vector2i(+1, 0);
+        public Vector2i castlesRTWQ => castlesOrigW + new Vector2i(-1, 0);
+        public Vector2i castlesRTBK => castlesOrigB + new Vector2i(+1, 0);
+        public Vector2i castlesRTBQ => castlesOrigB + new Vector2i(-1, 0);
 
         public List<Move> GetKingMoves(Vector4iTL pos, Piece p = Piece.NONE) {
             Piece piece = ((p == Piece.NONE) ? GetPiece(pos) : p);
@@ -565,7 +757,7 @@ namespace ChessCommon {
             int offset = -(int)piece.getColour();
 
             // I'm **pretty** sure this is correct to check that a pawn is on *its* second rank
-            bool isFirstStep = (pos.Y == 8 + offset) || (pos.Y == 1 + offset);
+            bool isFirstStep = (pos.Y == boundsInfo.BoardSize.Y + offset) || (pos.Y == 1 + offset);
 
             Vector4iTL tgt;
             Vector4i off;
@@ -597,26 +789,26 @@ namespace ChessCommon {
 
             off = new Vector4i(1, offset, 0, 0);
             tgt = pos + off;
-            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                 moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
             }
 
             off = new Vector4i(-1, offset, 0, 0);
             tgt = pos + off;
-            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                 moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
             }
 
 
             off = new Vector4i(0, 0, 1, offset);
             tgt = pos + off;
-            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                 moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
             }
 
             off = new Vector4i(0, 0, -1, offset);
             tgt = pos + off;
-            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+            if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                 moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
             }
 
@@ -624,29 +816,42 @@ namespace ChessCommon {
             if ((piece & Piece.MASK_KIND) == Piece.PIECE_BRAWN) {
                 off = new Vector4i(1, 0, 0, offset);
                 tgt = pos + off;
-                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                     moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
                 }
 
                 off = new Vector4i(-1, 0, 0, offset);
                 tgt = pos + off;
-                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                     moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
                 }
 
 
                 off = new Vector4i(0, offset, 1, 0);
                 tgt = pos + off;
-                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                     moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
                 }
 
                 off = new Vector4i(0, offset, -1, 0);
                 tgt = pos + off;
-                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == (GameColour)(-(int)piece.getColour()) || GetBoard(tgt.TL).epTarget == tgt.XY)) {
+                if (IsInBoard(tgt) && (GetPiece(tgt).getColour() == piece.getColour().inverse() || GetBoard(tgt.TL).epTarget == tgt.XY)) {
                     moves.Add(new Move(pos, tgt, GetBoard(tgt.TL).epTarget == tgt.XY ? MoveSpec.EnPassant : MoveSpec.None));
                 }
             }
+
+
+            if (pos.Y + offset == 1 || pos.Y + offset == boundsInfo.BoardSize.Y) {
+                // Promotion
+                List<Move> promotionMoves = new List<Move>();
+                foreach (Move move in moves) {
+                    foreach (MoveSpec spec in allowedPromotions) {
+                        promotionMoves.Add(new Move(move.origin, move.target, spec));
+                    }
+                }
+                return promotionMoves;
+            }
+
 
             return moves;
         }
@@ -691,8 +896,8 @@ namespace ChessCommon {
 
         public List<Move> GetLegalMoves(Vector2iTL bv) {
             List<Move> moves = new List<Move>();
-            for (int x = 1; x <= 8; ++x) {
-                for (int y = 1; y <= 8; ++y) {
+            for (int x = 1; x <= boundsInfo.BoardSize.X; ++x) {
+                for (int y = 1; y <= boundsInfo.BoardSize.Y; ++y) {
                     Vector4iTL pos = new Vector4iTL(new Vector2i(x, y), bv);
                     if (GetPiece(pos).getColour() == bv.colour) {
                         moves.AddRange(GetLegalMoves(pos));
@@ -723,7 +928,7 @@ namespace ChessCommon {
 
 
         public bool IsInBoard(Vector4iTL pos) {
-            return (1 <= pos.X && pos.X <= 8 && 1 <= pos.Y && pos.Y <= 8 && BoardExists(pos.TL));
+            return (1 <= pos.X && pos.X <= boundsInfo.BoardSize.X && 1 <= pos.Y && pos.Y <= boundsInfo.BoardSize.Y && BoardExists(pos.TL));
         }
 
         public bool MoveShouldPromote(Move move) {
@@ -738,7 +943,7 @@ namespace ChessCommon {
             switch (GetPiece(move.origin) & Piece.MASK_KIND) {
                 case Piece.PIECE_PAWN:
                 case Piece.PIECE_BRAWN:
-                    return (move.target.Y == 1 || move.target.Y == 8);
+                    return (move.target.Y == 1 || move.target.Y == boundsInfo.BoardSize.Y);
                 default:
                     return false;
             }
@@ -797,9 +1002,24 @@ namespace ChessCommon {
             }
         }
 
-        public void MakeMoveValidated(Move move, ColourRights rights) {
+        public bool MoveShouldCapture(Move move) {
+            if (!BoardExists(move.origin.TL)) {
+                throw new Exception("Error: origin board does not exist");
+            }
+
+            if (!BoardExists(move.target.TL)) {
+                throw new Exception("Error: target board does not exist");
+            }
+
+            return GetPiece(move.target) != Piece.NONE || MoveShouldEnPassant(move);
+        }
+
+        public bool MakeMoveValidated(Move move, ColourRights rights) {
             if (rights.hasRights(move.getColour()) && GetLegalMoves(move.getColour()).Contains(move) && move.getColour() == activePlayer) {
                 MakeMove(move);
+                return true;
+            } else {
+                return false;
             }
         }
 
@@ -897,7 +1117,7 @@ namespace ChessCommon {
                 imove.capture_target = move.target.XY;
                 if (imove.capture_target == moveBoard.epTarget) {
                     int offset = (int)movePiece.getColour();
-                    imove.capture_target.Y += offset;
+                    imove.capture_target += new Vector2i(0, offset);
                 }
                 imove.captured = moveBoard.GetPiece(imove.capture_target);
 
@@ -907,7 +1127,7 @@ namespace ChessCommon {
                     newFromBoard.moveTo = move.target.XY;
                 }
 
-                if ((move.spec & MoveSpec.IsCastles) != 0) {
+                if (move.spec.IsCastles()) {
                     Vector2i rookFrom, rookTo;
                     switch (move.spec) {
                         case MoveSpec.CastlesWK:
@@ -937,10 +1157,12 @@ namespace ChessCommon {
                 } else if (move.spec == MoveSpec.DoublePush) {
                     newToBoard.epTarget = (move.target.XY + move.origin.XY) * 0.5;
                 } else if (move.spec == MoveSpec.EnPassant) {
-                    newToBoard.RemovePiece(new Vector2i(move.target.X, move.origin.Y));
+                    // En passant
+                    int offset = (int)movePiece.getColour();
+                    newToBoard.RemovePiece(move.target.XY + new Vector2i(0, offset));
                 }
 
-                    boards.Add(newFromBoard.TL, newFromBoard);
+                boards.Add(newFromBoard.TL, newFromBoard);
                 moveStack.Push(imove);
             } else if (BoardIsPlayable(move.target.TL)) {
                 // Move to active board (no timeline split)
@@ -954,7 +1176,7 @@ namespace ChessCommon {
                     movePiece = (movePiece.getColour().isWhite() ? Piece.COLOUR_WHITE : Piece.COLOUR_BLACK) | promotionPiece;
                 }
 
-                newFromBoard = new Board(fromBoard, movePiece, move.origin.XY, null);
+                newFromBoard = new Board(fromBoard, movePiece, move.origin.XY, Vector2i.ZERO);
                 newToBoard = new Board(toBoard.TL.Y, toBoard, movePiece, move.target.XY);
 
                 imove.target_child = newToBoard.TL;
@@ -962,12 +1184,18 @@ namespace ChessCommon {
                 imove.capture_target = move.target.XY;
                 if (imove.capture_target == toBoard.epTarget) {
                     int offset = (int)movePiece.getColour();
-                    imove.capture_target.Y += offset;
+                    imove.capture_target += new Vector2i(0, offset);
                 }
                 imove.captured = toBoard.GetPiece(imove.capture_target);
 
                 newFromBoard.moveTravel = move.origin.XY;
                 newToBoard.moveTravel = move.target.XY;
+
+                if (move.spec == MoveSpec.EnPassant) {
+                    // En passant
+                    int offset = (int)movePiece.getColour();
+                    newToBoard.RemovePiece(move.target.XY + new Vector2i(0, offset));
+                }
 
                 boards.Add(newFromBoard.TL, newFromBoard);
                 boards.Add(newToBoard.TL, newToBoard);
@@ -984,7 +1212,7 @@ namespace ChessCommon {
                     movePiece = (movePiece.getColour().isWhite() ? Piece.COLOUR_WHITE : Piece.COLOUR_BLACK) | promotionPiece;
                 }
 
-                newFromBoard = new Board(fromBoard, movePiece, move.origin.XY, null);
+                newFromBoard = new Board(fromBoard, movePiece, move.origin.XY, Vector2i.ZERO);
 
                 int newL = 0;
                 if (move.getColour() == GameColour.WHITE) {
@@ -1000,12 +1228,18 @@ namespace ChessCommon {
                 imove.capture_target = move.target.XY;
                 if (imove.capture_target == toBoard.epTarget) {
                     int offset = (int)movePiece.getColour();
-                    imove.capture_target.Y += offset;
+                    imove.capture_target += new Vector2i(0, offset);
                 }
                 imove.captured = toBoard.GetPiece(imove.capture_target);
 
                 newFromBoard.moveTravel = move.origin.XY;
                 newToBoard.moveTravel = move.target.XY;
+
+                if (move.spec == MoveSpec.EnPassant) {
+                    // En passant
+                    int offset = (int)movePiece.getColour();
+                    newToBoard.RemovePiece(move.target.XY + new Vector2i(0, offset));
+                }
 
                 boards.Add(newFromBoard.TL, newFromBoard);
                 boards.Add(newToBoard.TL, newToBoard);
@@ -1151,16 +1385,23 @@ namespace ChessCommon {
             return new BoardSubmissionState(true);
         }
 
-        public void SubmitMoves() {
+        public void SubmitMoves(ColourRights rights = ColourRights.BOTH) {
             if (!CanSubmitMoves()) {
                 throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
             }
+
+            if (!rights.hasRights(activePlayer)) {
+                return;
+            }
+
             activePlayer = GetPresentColour();
             playerHasLost = playerLossBuf;
-            if (!playerHasLost.hasNone()) {
-                timer.Stop();
-            } else {
-                timer.SetTurn(activePlayer);
+            if (timer != null) {
+                if (!playerHasLost.hasNone()) {
+                    timer.Stop();
+                } else {
+                    timer.SetTurn(activePlayer);
+                }
             }
         }
 
@@ -1176,9 +1417,14 @@ namespace ChessCommon {
         }
 
 
-        public void UnmakeMove(Move move = null) {
+        public void UnmakeMove(Move move = null, ColourRights rights = ColourRights.BOTH) {
             if (!(move is null) && move != moveStack.First()) {
                 throw new InvalidOperationException("Error: Attempting to unmake a move that's not at the top of the stack");
+            }
+
+
+            if (!(rights.hasRights(moveStack.First().getColour()) && rights.hasRights(activePlayer))) {
+                return;
             }
 
             IMove imove = moveStack.Pop();

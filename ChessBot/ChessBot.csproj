@@ -41,7 +41,6 @@
   <ItemGroup>
     <Compile Include="BotInterface.cs" />
     <Compile Include="ChessBot.cs" />
-    <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ChessCommon\ChessCommon.csproj">
