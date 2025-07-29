@@ -40,7 +40,7 @@ namespace ChessCommon {
         }
 
         public static ChessCommand Deserialize(string str) {
-            Match match = Regex.Match(str, "::([^:]*):([^:]*)(:.*?)?:;");
+            Match match = Regex.Match(str, "::([^:]*):([^:]*)(:[^:]*)?:;");
 
             ChessCommand command = new ChessCommand();
 

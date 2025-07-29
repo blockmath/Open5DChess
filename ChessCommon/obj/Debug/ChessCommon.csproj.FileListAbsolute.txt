@@ -11,3 +11,6 @@ C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Standard.txt
 C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Misc-Miniature.txt
 C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Misc-GlobalWarming.txt
 C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\Variants\Standard-Brawns.txt
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\lang\en
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\lang\ru
+C:\Users\devin\Open5DChess\ChessCommon\bin\Debug\options.txt

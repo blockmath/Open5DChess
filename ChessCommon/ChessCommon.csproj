@@ -72,12 +72,20 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="lang\en">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="lang\ru">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Board.cs" />
     <Compile Include="ChessCommand.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="GameState.cs" />
+    <Compile Include="OptionsLoader.cs" />
+    <Compile Include="TextLocalizer.cs" />
     <Compile Include="Timer.cs" />
     <Compile Include="Types.cs" />
     <Compile Include="Vector.cs" />
@@ -98,6 +106,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="options.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="variants.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -15,3 +15,6 @@ C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessServer.csproj.CoreCompileI
 C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessSer.FBCBF35F.Up2Date
 C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessServer.dll
 C:\Users\devin\Open5DChess\ChessServer\obj\Debug\ChessServer.pdb
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\lang\en
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\lang\ru
+C:\Users\devin\Open5DChess\ChessServer\bin\Debug\options.txt

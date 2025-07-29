@@ -7,6 +7,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using System.Diagnostics;
+using System.Threading;
 
 namespace ChessClient {
     public class ChessClient {
@@ -17,17 +19,24 @@ namespace ChessClient {
 
         public GameState personalState = new GameState();
 
-        public void Connect(EndPoint serverEndpoint, GameColour asColour) {
+        public bool Connect(EndPoint serverEndpoint, GameColour asColour) {
             this.serverEndpoint = serverEndpoint;
             socket = new Socket(serverEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            socket.Connect(serverEndpoint);
+            try {
+                socket.Connect(serverEndpoint);
+            } catch (SocketException) {
+                return false;
+            }
+
 
             SendCommand(new ChessCommand(CommandType.REQUEST_CONNECTION, asColour));
 
             SendCommand(new ChessCommand(CommandType.REQUEST_PGN));
 
             ClientListen();
+
+            return true;
         }
 
         public void Disconnect() {
@@ -42,24 +51,34 @@ namespace ChessClient {
         private async void ClientListen() {
             byte[] buffer = new byte[65536];
             while (socket != null) {
-                int recieved = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
-                RecieveData(Encoding.UTF8.GetString(buffer, 0, recieved));
+                int recieved;
+                try {
+                    recieved = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+                } catch (SocketException) {
+                    socket = null;
+                    break;
+                }
+                string data = Encoding.UTF8.GetString(buffer, 0, recieved);
+                if (data[0] == '<') {
+                    // Response
+                    Debug.WriteLine("CLIENT: RESP <= " + data);
+                } else {
+                    Debug.WriteLine("CLIENT: RECV <= " + data);
+                    RecieveData(data);
+                }
             }
         }
-        
-
-
 
         public bool SendCommand(ChessCommand command) {
+            JustSentCommand = command.type;
             return SendData(command.Serialize());
         }
 
         public bool SendData(string data) {
+            Debug.WriteLine("CLIENT: SEND => " + data);
             socket.Send(Encoding.UTF8.GetBytes(data));
 
-            byte[] buffer = new byte[65536];
-            int recieved = socket.Receive(buffer);
-            return (Encoding.UTF8.GetString(buffer, 0, recieved) == "<|ACK|>");
+            return true;
         }
 
 
@@ -80,10 +99,17 @@ namespace ChessClient {
             } else {
                 response = "<|ERR|>";
             }
+            Debug.WriteLine("CLIENT: RESP => " + response);
             socket.Send(Encoding.UTF8.GetBytes(response));
         }
 
+        private CommandType JustSentCommand = CommandType.NONE;
+
         public void RecieveCommand(ChessCommand command) {
+            if (JustSentCommand == command.type && JustSentCommand != CommandType.MOVE) {
+                JustSentCommand = CommandType.NONE;
+                return;
+            }
             switch (command.type) {
                 case CommandType.MOVE:
                     personalState.MakeMoveValidated(command.move, ColourRights.BOTH);

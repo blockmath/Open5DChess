@@ -210,6 +210,8 @@ namespace ChessCommon {
 
         public static bool hasWhite(this ColourRights rights) => rights.hasRights(GameColour.WHITE);
         public static bool hasBlack(this ColourRights rights) => rights.hasRights(GameColour.BLACK);
+
+        public static bool hasBoth(this ColourRights rights) => rights.hasWhite() && rights.hasBlack();
         public static bool hasNone(this ColourRights rights) => !(rights.hasWhite() || rights.hasBlack());
 
         public static GameColour inverse(this GameColour colour) => (GameColour)(-(int)colour);

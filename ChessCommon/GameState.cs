@@ -182,6 +182,19 @@ namespace ChessCommon {
                         case "Variant":
                             // These are in a different case because I might want to use them someday whereas the others are completely useless
                             break;
+                        case "Active":
+                            switch (slin[1].Trim('"')) {
+                                case "WHITE":
+                                    activePlayer = GameColour.WHITE;
+                                    break;
+                                case "BLACK":
+                                    activePlayer = GameColour.BLACK;
+                                    break;
+                                default:
+                                    activePlayer = GameColour.NONE;
+                                    break;
+                            }
+                            break;
                         case "TimeControls":
                             Match timeMatch = Regex.Match(slin[1].Trim('"'), "(\\d+)\\+(\\d+)");
                             timer = new Timer(long.Parse(timeMatch.Groups[1].Value) * 60_000_000L, long.Parse(timeMatch.Groups[2].Value) * 1_000_000L);
@@ -268,7 +281,6 @@ namespace ChessCommon {
             boards = new Dictionary<Vector2iTL, Board>();
             foreach (KeyValuePair<Vector2iTL, string> kv in fen) {
                 Vector2iTL prev = (kv.Key - new Vector2i(1, 0)).NextTurn();
-                Debug.WriteLine(prev.ToString());
                 Board board;
                 if (boards.ContainsKey(prev)) {
                     board = new Board(boards[prev], kv.Value);
@@ -366,10 +378,10 @@ namespace ChessCommon {
 
         public string MoveToString(Move move) {
             if (move.origin.TL == move.target.TL) {
-                return string.Format("({1}T{0})", move.origin.T, move.origin.L) + GetPiece(move.origin).GetPgnChar() + move.origin.XY.ToString() + (MoveShouldCapture(move) ? "x" : "") + move.target.XY.ToString();
+                return string.Format("({1}T{0})", move.origin.T, move.origin.L) + GetPiece(move.origin).GetPgnChar() + move.origin.XY.ToString(boundsInfo) + (MoveShouldCapture(move) ? "x" : "") + move.target.XY.ToString(boundsInfo);
             } else {
                 string sep = (move.origin.L == move.target.L) ? ">>" : ">";
-                return string.Format("({1}T{0})", move.origin.T, move.origin.L) + GetPiece(move.origin).GetPgnChar() + move.origin.XY.ToString() + sep + (MoveShouldCapture(move) ? "x" : "") + string.Format("({1}T{0})", move.target.T, move.target.L) + move.target.XY.ToString();
+                return string.Format("({1}T{0})", move.origin.T, move.origin.L) + GetPiece(move.origin).GetPgnChar() + move.origin.XY.ToString(boundsInfo) + sep + (MoveShouldCapture(move) ? "x" : "") + string.Format("({1}T{0})", move.target.T, move.target.L) + move.target.XY.ToString(boundsInfo);
             }
         }
 
@@ -385,7 +397,7 @@ namespace ChessCommon {
             while (sp < things.Count) {
                 string line = things[sp++];
 
-                if (line[0] == '[') {
+                if (line[0] == '[' && !line.StartsWith("[Active")) {
                     pgn_metadata += line + "\n";
                 } else {
                     break;
@@ -396,7 +408,7 @@ namespace ChessCommon {
         }
 
         public string GetPgn() {
-            string pgn = GetPgnMetadata(initialPgn) + "\n1.";
+            string pgn = GetPgnMetadata(initialPgn) + "\n[Active " + (activePlayer.ToString()) + "]";
 
             Vector1iTL mt = new Vector1iTL(1, GameColour.WHITE);
 
@@ -452,7 +464,8 @@ namespace ChessCommon {
         public List<Board> GetMoveableBoards(GameColour colour = GameColour.NONE) {
             List<Board> mb = new List<Board>();
 
-            foreach (Board board in boards.Values) {
+            List<Board> boardsList = boards.Values.ToList();
+            foreach (Board board in boardsList) {
                 if (BoardIsPlayable(board.TL) && board.TL.colour != colour.inverse()) {
                     mb.Add(board);
                 }
@@ -1302,12 +1315,12 @@ namespace ChessCommon {
 
         public bool PlayerRoyalCaptured => playerLossBuf != ColourRights.NONE;
 
-        public bool CanSubmitMoves() {
-            return GetPresentColour() != activePlayer;
+        public bool CanSubmitMoves(ColourRights rights = ColourRights.BOTH) {
+            return GetPresentColour() != activePlayer && rights.hasRights(activePlayer);
         }
 
-        public bool CanUndoMoves() {
-            return moveStack.Count > 0 && moveStack.First().getColour() == activePlayer;
+        public bool CanUndoMoves(ColourRights rights = ColourRights.BOTH) {
+            return moveStack.Count > 0 && moveStack.First().getColour() == activePlayer && rights.hasRights(activePlayer);
         }
 
         public bool LastMoveWasTravel() {

@@ -22,6 +22,7 @@ namespace ChessGui {
 
         const float SCROLL_SENSITIVITY = 1.0f / 2400.0f;
 
+        public bool ShouldDrawControlButtons = true;
 
         public GameColour perspective = GameColour.WHITE;
 
@@ -51,12 +52,12 @@ namespace ChessGui {
         public Texture2D circle;
 
 
-        private Effect msaa;
+        public Effect msaa { get; private set; }
         private FontSystem fontSystem2;
-        private FontSystem clockFontSystem;
+        public FontSystem clockFontSystem;
 
         public FontSystem fontSystem;
-        private SpriteFontBase spriteFont;
+        public SpriteFontBase spriteFont;
 
         public FontSystem gridFontSystem;
         private SpriteFontBase gridFont;
@@ -114,7 +115,7 @@ namespace ChessGui {
         private static readonly Rectangle RECT_EVERYWHERE = new Rectangle(int.MinValue / 2, int.MinValue / 2, int.MaxValue, int.MaxValue);
 
         private Vector2 BoardDrawPos(Vector2iTL TL) {
-            return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X), TL.Y * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y));
+            return new Vector2(Methods.TVis(TL) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X), TL.Y * (perspective.isBlack() ? -1 : 1) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y));
         }
 
         public static Rectangle VecRect(Vector2 pos, Vector2 size) => new Rectangle((int)pos.X, (int)pos.Y, (int)size.X, (int)size.Y);
@@ -247,8 +248,14 @@ namespace ChessGui {
 
             GameColour colour = tailVPos.colour;
 
-            Vector2 tp0 = new Vector2(Methods.TVis(tailVPos) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) + (tailVPos.X - 4.5f) * PIECE_SIZE.X, tailVPos.L * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) + (tailVPos.Y - 4.5f) * PIECE_SIZE.Y);
-            Vector2 tp3 = new Vector2(Methods.TVis(headVPos) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) + (headVPos.X - 4.5f) * PIECE_SIZE.X, headVPos.L * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) + (headVPos.Y - 4.5f) * PIECE_SIZE.Y);
+            Vector2 tp0 = new Vector2(
+                Methods.TVis(tailVPos) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) + ((perspective.isBlack() ? gameState.boundsInfo.BoardSize.X - tailVPos.X + 1 : tailVPos.X) - 4.5f) * PIECE_SIZE.X,
+                (tailVPos.L * (perspective.isBlack() ? -1 : 1)) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) + ((perspective.isBlack() ? gameState.boundsInfo.BoardSize.Y - tailVPos.Y + 1: tailVPos.Y) - 4.5f) * PIECE_SIZE.Y
+                );
+            Vector2 tp3 = new Vector2(
+                Methods.TVis(headVPos) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) + ((perspective.isBlack() ? gameState.boundsInfo.BoardSize.X - headVPos.X + 1 : headVPos.X) - 4.5f) * PIECE_SIZE.X,
+                (headVPos.L * (perspective.isBlack() ? -1 : 1)) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) + ((perspective.isBlack() ? gameState.boundsInfo.BoardSize.Y - headVPos.Y + 1: headVPos.Y) - 4.5f) * PIECE_SIZE.Y
+                );
 
             Vector2 tdp = tp3 - tp0;
             tdp.Normalize();
@@ -301,32 +308,41 @@ namespace ChessGui {
 
             // For White
             if (gameState.ColourCanActiveTravel(GameColour.WHITE)) {
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 3)), WHITE_BOARD_COLOUR_SHADED_B);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 2.5)), WHITE_BOARD_COLOUR_SHADED_A);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 1.25)), TL_COLOUR_B);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 1)), TL_COLOUR_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 3)), WHITE_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 2.5)), WHITE_BOARD_COLOUR_SHADED_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 1.25)), TL_COLOUR_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 1)), TL_COLOUR_A);
             } else {
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 2)), WHITE_BOARD_COLOUR_SHADED_B);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos), (int)(PIECE_SIZE.X * 1.5)), WHITE_BOARD_COLOUR_SHADED_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 2)), WHITE_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, maxTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 1.5)), WHITE_BOARD_COLOUR_SHADED_A);
             }
 
             // For Black
             if (gameState.ColourCanActiveTravel(GameColour.BLACK)) {
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 3)), BLACK_BOARD_COLOUR_SHADED_B);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 2.5)), BLACK_BOARD_COLOUR_SHADED_A);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 1.25)), TL_COLOUR_B);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 1)), TL_COLOUR_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 3)), BLACK_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 2.5)), BLACK_BOARD_COLOUR_SHADED_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 1.25)), TL_COLOUR_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 1)), TL_COLOUR_A);
             } else {
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 2)), BLACK_BOARD_COLOUR_SHADED_B);
-                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos), (int)(PIECE_SIZE.X * 1.5)), BLACK_BOARD_COLOUR_SHADED_A);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 2)), BLACK_BOARD_COLOUR_SHADED_B);
+                spriteBatch.Draw(circle, SqrSurrounding(new Vector2(presentPos, minTLPos * (perspective.isBlack() ? -1 : 1)), (int)(PIECE_SIZE.X * 1.5)), BLACK_BOARD_COLOUR_SHADED_A);
             }
 
 
             // Draw the "The Present" label
-            Vector2 labelSize = spriteFont.MeasureString("The Present");
+            SpriteFontBase italicFont = fontSystem2.GetFont(192);
 
-            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, maxTLPos + PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y)), presentTextColour, (float)(Math.PI / 2));
-            spriteBatch.DrawString(spriteFont, "The Present", new Vector2(presentPos + labelSize.Y / 2 + 16, minTLPos - PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - labelSize.X), presentTextColour, (float)(Math.PI / 2));
+            string present_text = TextLocalizer.Get("the_present");
+
+            Vector2 labelSize = italicFont.MeasureString(present_text);
+
+            if (perspective.isBlack()) {
+                spriteBatch.DrawString(italicFont, present_text, new Vector2(presentPos + labelSize.Y / 2 + 16, -maxTLPos - PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) / 2 - labelSize.X), presentTextColour, (float)(Math.PI / 2));
+                spriteBatch.DrawString(italicFont, present_text, new Vector2(presentPos + labelSize.Y / 2 + 16, -minTLPos + PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) / 2), presentTextColour, (float)(Math.PI / 2));
+            } else {
+                spriteBatch.DrawString(italicFont, present_text, new Vector2(presentPos + labelSize.Y / 2 + 16, maxTLPos + PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) / 2), presentTextColour, (float)(Math.PI / 2));
+                spriteBatch.DrawString(italicFont, present_text, new Vector2(presentPos + labelSize.Y / 2 + 16, minTLPos - PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) / 2 - labelSize.X), presentTextColour, (float)(Math.PI / 2));
+            }
         }
 
         // Render a single board, including the border (showing whether it's playable, whose turn it is, etc.)
@@ -336,7 +352,7 @@ namespace ChessGui {
 
             Point boardPos = new Point (
                 (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) - PIECE_SIZE.X * (BOARD_SIZE.X / 2 + borderWidth)),
-                (int)(board.TL.Y * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth))
+                (int)((board.TL.Y * (perspective.isBlack() ? -1 : 1)) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 + borderWidth))
             );
             Point boardSize = new Point(
                 (int)(PIECE_SIZE.X * (BOARD_SIZE.X + 2 * borderWidth)),
@@ -366,7 +382,7 @@ namespace ChessGui {
                     // Draw the actual square on the board first
                     Rectangle targetRect = new Rectangle(
                         (int)(Methods.TVis(board.TL) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) - PIECE_SIZE.X * (BOARD_SIZE.X / 2 - i)),
-                        (int)(board.TL.Y * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 - j)),
+                        (int)((board.TL.Y * (perspective.isBlack() ? -1 : 1)) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y / 2 - j)),
                         (int)(PIECE_SIZE.X),
                         (int)(PIECE_SIZE.Y));
                     spriteBatch.Draw(sq, targetRect, (ri + rj) % 2 == 0 ? LIGHT_SQUARE_COLOUR : DARK_SQUARE_COLOUR);
@@ -377,7 +393,7 @@ namespace ChessGui {
 
                     Vector2i xypos = new Vector2i(
                         (int)Math.Floor(Methods.TVis(board.TL) * (BOARD_SIZE.X + BOARD_OFFSET.X) - BOARD_SIZE.X / 2 + i),
-                        (int)Math.Floor(board.TL.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - BOARD_SIZE.Y / 2 + j));
+                        (int)Math.Floor((board.TL.Y * (perspective.isBlack() ? -1 : 1)) * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - BOARD_SIZE.Y / 2 + j));
 
                     if (xypos == ws_mposi) {
                         hovered = xytl;
@@ -441,7 +457,6 @@ namespace ChessGui {
                     move = new Move(selected, hovered, castleSpec);
                 }
 
-                gameState.MakeMoveValidated(move, userRights);
                 parent.MakeMove(move);
             }
 
@@ -482,7 +497,7 @@ namespace ChessGui {
                     spriteBatch.Draw(sq, target, colourA);
 
                     if (t == gameState.GetMaxT5() && l >= gameState.GetMinTL() - 1 && l <= gameState.GetMaxTL() + 1) {
-                        string lString = l.ToString("+#;-#;0") + "L ";
+                        string lString = (l * (perspective.isBlack() ? -1 : 1)).ToString("+#;-#;0") + "L ";
                         Vector2 strSize = gridFont.MeasureString(lString);
 
                         spriteBatch.DrawString(gridFont, lString, new Vector2(target.Right - strSize.X, target.Center.Y - strSize.Y / 2), colourB);
@@ -534,7 +549,8 @@ namespace ChessGui {
                     RenderTimelineGizmo(board.TL);
                 }
 
-                foreach (Board board in gameState.boards.Values) {
+                List<Board> boardsList = gameState.boards.Values.ToList();
+                foreach (Board board in boardsList) {
                     RenderBoard(board);
                 }
 
@@ -622,6 +638,8 @@ namespace ChessGui {
             return point.X >= 0 && point.X <= parent.Window.ClientBounds.Width && point.Y >= 0 && point.Y <= parent.Window.ClientBounds.Height;
         }
 
+        public string infoText = "";
+
         public void Draw(GameTime gameTime, GraphicsDevice GraphicsDevice) {
             GraphicsDevice.Clear(NothingGridColour);
 
@@ -644,52 +662,54 @@ namespace ChessGui {
 
             // Draw UI and other screen-space objects
 
-
-            // Draw top-middle buttons
-            spriteBatch.Begin(
-                transformMatrix: WindowCentreMatrixX,
-                samplerState: SamplerState.PointClamp,
-                effect: msaa,
-                blendState: null
-            );
-
             submitHovered = undoHovered = false;
-
-            Color submitButtonColour = BUTTON_COLOUR_UNAVAILABLE;
-            Color undoButtonColour = BUTTON_COLOUR_UNAVAILABLE;
-
-            Color submitTextColor = Color.Black;
-            Color undoTextColor = Color.Black;
-
-            if (SubmitIsAllowed) {
-                submitButtonColour = BUTTON_COLOUR_SUBMITWHITE;
-                if (gameState.activePlayer.isBlack()) {
-                    submitButtonColour = BUTTON_COLOUR_SUBMITBLACK;
-                    submitTextColor = Color.White;
-                }
-                if (ButtonSubmitRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrixX)))) {
-                    submitButtonColour = Color.Lerp(BUTTON_COLOUR_HOVERED, submitButtonColour, 0.5f);
-                    submitHovered = true;
-                }
-            }
-
-            if (UndoIsAllowed) {
-                undoButtonColour = gameState.LastMoveWasTravel() ? BUTTON_COLOUR_UNDOTRAVEL : BUTTON_COLOUR_UNDOMOVE;
-                if (ButtonUndoRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrixX)))) {
-                    undoButtonColour = Color.Lerp(BUTTON_COLOUR_HOVERED, undoButtonColour, 0.5f);
-                    undoHovered = true;
-                }
-            }
-
-            spriteBatch.Draw(sq, ButtonSubmitRect, submitButtonColour);
-            spriteBatch.Draw(sq, ButtonUndoRect, undoButtonColour);
-
             SpriteFontBase spriteFont = fontSystem.GetFont(42);
-            spriteBatch.DrawString(spriteFont, "Submit Moves", ButtonSubmitRect.Center.ToVector2() - spriteFont.MeasureString("Submit Moves") / 2 + new Vector2(0, -5), submitTextColor);
-            spriteBatch.DrawString(spriteFont, "Undo Move", ButtonUndoRect.Center.ToVector2() - spriteFont.MeasureString("Undo Move") / 2 + new Vector2(0, -5), undoTextColor);
+
+            if (ShouldDrawControlButtons) {
+                // Draw top-middle buttons
+                spriteBatch.Begin(
+                    transformMatrix: WindowCentreMatrixX,
+                    samplerState: SamplerState.PointClamp,
+                    effect: msaa,
+                    blendState: null
+                );
 
 
-            spriteBatch.End();
+                Color submitButtonColour = BUTTON_COLOUR_UNAVAILABLE;
+                Color undoButtonColour = BUTTON_COLOUR_UNAVAILABLE;
+
+                Color submitTextColor = Color.Black;
+                Color undoTextColor = Color.Black;
+
+                if (SubmitIsAllowed) {
+                    submitButtonColour = BUTTON_COLOUR_SUBMITWHITE;
+                    if (gameState.activePlayer.isBlack()) {
+                        submitButtonColour = BUTTON_COLOUR_SUBMITBLACK;
+                        submitTextColor = Color.White;
+                    }
+                    if (ButtonSubmitRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrixX)))) {
+                        submitButtonColour = Color.Lerp(BUTTON_COLOUR_HOVERED, submitButtonColour, 0.5f);
+                        submitHovered = true;
+                    }
+                }
+
+                if (UndoIsAllowed) {
+                    undoButtonColour = gameState.LastMoveWasTravel() ? BUTTON_COLOUR_UNDOTRAVEL : BUTTON_COLOUR_UNDOMOVE;
+                    if (ButtonUndoRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrixX)))) {
+                        undoButtonColour = Color.Lerp(BUTTON_COLOUR_HOVERED, undoButtonColour, 0.5f);
+                        undoHovered = true;
+                    }
+                }
+
+                spriteBatch.Draw(sq, ButtonSubmitRect, submitButtonColour);
+                spriteBatch.Draw(sq, ButtonUndoRect, undoButtonColour);
+
+                spriteBatch.DrawString(spriteFont, TextLocalizer.Get("submit_moves"), ButtonSubmitRect.Center.ToVector2() - spriteFont.MeasureString(TextLocalizer.Get("submit_moves")) / 2 + new Vector2(0, -5), submitTextColor);
+                spriteBatch.DrawString(spriteFont, TextLocalizer.Get("undo_move"), ButtonUndoRect.Center.ToVector2() - spriteFont.MeasureString(TextLocalizer.Get("undo_move")) / 2 + new Vector2(0, -5), undoTextColor);
+
+
+                spriteBatch.End();
+            }
 
             if (gameState.timer is not null) {
                 // Draw top-left time controls
@@ -708,10 +728,27 @@ namespace ChessGui {
                 spriteBatch.Draw(sq, ClockWhiteRect, gameState.activePlayer.isBlack() ? GameStateRenderer.BLACK_BOARD_COLOUR_SHADED_B : GameStateRenderer.TIME_COLOUR_LIGHT);
                 spriteBatch.Draw(sq, ClockBlackRect, gameState.activePlayer.isBlack() ? GameStateRenderer.TIME_COLOUR_DARK : GameStateRenderer.WHITE_BOARD_COLOUR_SHADED_B);
 
-                spriteBatch.DrawString(clockFont, "W: " + gameState.timerView.ToString(GameColour.WHITE), ClockWhiteRect.Location.ToVector2() + new Vector2(5, 2), gameState.activePlayer.isBlack() ? Color.White : Color.Black);
-                spriteBatch.DrawString(clockFont, "B: " + gameState.timerView.ToString(GameColour.BLACK), ClockBlackRect.Location.ToVector2() + new Vector2(5, 2), gameState.activePlayer.isBlack() ? Color.White : Color.Black);
+                spriteBatch.DrawString(clockFont, TextLocalizer.Get("white_abbr") + gameState.timerView.ToString(GameColour.WHITE), ClockWhiteRect.Location.ToVector2() + new Vector2(5, 2), gameState.activePlayer.isBlack() ? Color.White : Color.Black);
+                spriteBatch.DrawString(clockFont, TextLocalizer.Get("black_abbr") + gameState.timerView.ToString(GameColour.BLACK), ClockBlackRect.Location.ToVector2() + new Vector2(5, 2), gameState.activePlayer.isBlack() ? Color.White : Color.Black);
 
                 spriteBatch.End();
+            }
+
+            if (infoText != "") {
+                // Draw lower-left info text
+
+                spriteBatch.Begin(
+                    transformMatrix: Matrix.CreateTranslation(new Vector3(0, parent.Window.ClientBounds.Height, 0)),
+                    samplerState: SamplerState.PointClamp,
+                    effect: msaa,
+                    blendState: null
+                );
+
+                Vector2 textBounds = spriteFont.MeasureString(infoText, lineSpacing: -10);
+                spriteBatch.DrawString(spriteFont, infoText, new Vector2(10, -10 - textBounds.Y), Color.Black, lineSpacing: -10);
+
+                spriteBatch.End();
+
             }
         }
 
@@ -721,12 +758,10 @@ namespace ChessGui {
             if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
                 if (submitHovered) {
                     if (Winners.hasNone() && SubmitIsAllowed) {
-                        gameState.SubmitMoves();
                         parent.SubmitMoves();
                     }
                 } else if (undoHovered) {
                     if (UndoIsAllowed) {
-                        gameState.GuiUndoMove();
                         parent.GuiUndoMove();
                     }
                 } else {

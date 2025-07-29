@@ -12,6 +12,7 @@ namespace ChessGui {
         protected GraphicsDeviceManager graphics;
         protected GameStateRenderer renderer;
 
+        protected Matrix WindowCentreMatrix => Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2() / 2, 0));
 
         public ChessGui() {
             graphics = new GraphicsDeviceManager(this);

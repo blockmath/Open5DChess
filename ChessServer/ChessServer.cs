@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ChessServer {
@@ -67,8 +68,12 @@ namespace ChessServer {
                 try {
                     int recieved = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
                     string data = Encoding.UTF8.GetString(buffer, 0, recieved);
-                    Debug.WriteLine("RECV <= " + data);
-                    RecieveData(data, socket);
+                    if (data[0] == '<') {
+                        Debug.WriteLine("SERVER: RESP <= " + data);
+                    } else {
+                        Debug.WriteLine("SERVER: RECV <= " + data);
+                        RecieveData(data, socket);
+                    }
                 } catch (SocketException) {
                     clients.Remove(socket);
                 }
@@ -79,6 +84,8 @@ namespace ChessServer {
         public ColourRights GetSocketRights(Socket socket) {
             return (socket == whiteSocket ? ColourRights.WHITE : ColourRights.NONE) | (socket == blackSocket ? ColourRights.BLACK : ColourRights.NONE);
         }
+
+
 
 
         public void RecieveCommand(ChessCommand command, Socket socket) {
@@ -105,11 +112,11 @@ namespace ChessServer {
                     if (command.colour.isNone()) {
                         // Don't need to do anything special
                     } else if (command.colour.isWhite()) {
-                        if (whiteSocket is null) {
+                        if (whiteSocket is null || !whiteSocket.Connected) {
                             whiteSocket = socket;
                         }
                     } else if (command.colour.isBlack()) {
-                        if (blackSocket is null) {
+                        if (blackSocket is null || !blackSocket.Connected) {
                             blackSocket = socket;
                         }
                     }
@@ -120,6 +127,19 @@ namespace ChessServer {
         public void RecieveData(string data, Socket socket) {
             string response = "";
             bool shouldSendPgn = false;
+
+            if (data[1] == ':') {
+                response = "<|ACK|>";
+            } else if (data[1] == '@') {
+                // why the fuck is the client sending us pgn
+                response = "<|FBD|>";
+            } else {
+                response = "<|ERR|>";
+            }
+
+            Debug.WriteLine("SERVER: RESP => " + response);
+            socket.Send(Encoding.UTF8.GetBytes(response));
+
             if (data[1] == ':') {
                 // Command
                 ChessCommand command = ChessCommand.Deserialize(data);
@@ -128,16 +148,11 @@ namespace ChessServer {
                 } else {
                     RecieveCommand(command, socket);
                 }
-                response = "<|ACK|>";
             } else if (data[1] == '@') {
-                // why the fuck is the client sending us pgn
-                response = "<|WTF|>";
-            } else {
-                response = "<|ERR|>";
-            }
 
-            Debug.WriteLine("RESP => " + response);
-            socket.Send(Encoding.UTF8.GetBytes(response));
+            } else {
+
+            }
 
             if (shouldSendPgn) {
                 string pgn = "";
@@ -165,14 +180,10 @@ namespace ChessServer {
         }
 
         public bool SendData(string data, Socket socket) {
-            Debug.WriteLine("SEND => " + data);
+            Debug.WriteLine("SERVER: SEND => " + data);
             socket.Send(Encoding.UTF8.GetBytes(data));
 
-            byte[] buffer = new byte[1024];
-            int recieved = socket.Receive(buffer);
-            string response = Encoding.UTF8.GetString(buffer, 0, recieved);
-            Debug.WriteLine("RESP <= " + response);
-            return (response == "<|ACK|>");
+            return true;
         }
 
 
@@ -187,6 +198,20 @@ namespace ChessServer {
         public void BroadcastTimerInfo() {
             foreach (Socket socket in clients) {
                 SendTimerInfo(socket);
+            }
+        }
+
+
+
+        public bool IsColourConnected(GameColour colour) {
+            switch (colour) {
+                case GameColour.NONE:
+                default:
+                    return false;
+                case GameColour.WHITE:
+                    return whiteSocket != null && whiteSocket.Connected;
+                case GameColour.BLACK:
+                    return blackSocket != null && blackSocket.Connected;
             }
         }
 

@@ -57,3 +57,6 @@ C:\Users\devin\Open5DChess\ChessGui\obj\Debug\net8.0\ChessGui.pdb
 C:\Users\devin\Open5DChess\ChessGui\obj\Debug\net8.0\ChessGui.genruntimeconfig.cache
 C:\Users\devin\Open5DChess\ChessGui\obj\Debug\net8.0\ref\ChessGui.dll
 C:\Users\devin\Open5DChess\ChessGui\bin\Debug\net8.0\Variants\Standard-Brawns.txt
+C:\Users\devin\Open5DChess\ChessGui\bin\Debug\net8.0\lang\en
+C:\Users\devin\Open5DChess\ChessGui\bin\Debug\net8.0\lang\ru
+C:\Users\devin\Open5DChess\ChessGui\bin\Debug\net8.0\options.txt

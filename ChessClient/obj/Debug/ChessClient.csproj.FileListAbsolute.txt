@@ -15,3 +15,6 @@ C:\Users\devin\Open5DChess\ChessClient\bin\Debug\ChessCommon.dll.config
 C:\Users\devin\Open5DChess\ChessClient\obj\Debug\ChessCli.1C99120A.Up2Date
 C:\Users\devin\Open5DChess\ChessClient\obj\Debug\ChessClient.dll
 C:\Users\devin\Open5DChess\ChessClient\obj\Debug\ChessClient.pdb
+C:\Users\devin\Open5DChess\ChessClient\bin\Debug\options.txt
+C:\Users\devin\Open5DChess\ChessClient\bin\Debug\lang\en
+C:\Users\devin\Open5DChess\ChessClient\bin\Debug\lang\ru

@@ -65,3 +65,6 @@ C:\Users\devin\Open5DChess\ChessGuiServer\obj\Debug\net8.0\refint\ChessGuiServer
 C:\Users\devin\Open5DChess\ChessGuiServer\obj\Debug\net8.0\ChessGuiServer.pdb
 C:\Users\devin\Open5DChess\ChessGuiServer\obj\Debug\net8.0\ChessGuiServer.genruntimeconfig.cache
 C:\Users\devin\Open5DChess\ChessGuiServer\obj\Debug\net8.0\ref\ChessGuiServer.dll
+C:\Users\devin\Open5DChess\ChessGuiServer\bin\Debug\net8.0\lang\en
+C:\Users\devin\Open5DChess\ChessGuiServer\bin\Debug\net8.0\lang\ru
+C:\Users\devin\Open5DChess\ChessGuiServer\bin\Debug\net8.0\options.txt
