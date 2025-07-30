@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ChessGuiBot")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+acfd347fbdd2441a2b93cf77c3f9ed6dd65b43d9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f7e7537f93f8534edf6e3ae5918bf5a4413add21")]
 [assembly: System.Reflection.AssemblyProductAttribute("ChessGuiBot")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ChessGuiBot")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

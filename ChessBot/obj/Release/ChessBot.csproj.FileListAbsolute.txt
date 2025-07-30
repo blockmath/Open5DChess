@@ -9,3 +9,16 @@ C:\Users\devin\Open5DChess\ChessBot\bin\Release\ChessBot.dll
 C:\Users\devin\Open5DChess\ChessBot\bin\Release\ChessCommon.dll
 C:\Users\devin\Open5DChess\ChessBot\bin\Release\ChessCommon.dll.config
 C:\Users\devin\Open5DChess\ChessBot\obj\Release\ChessBot.dll
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\options.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\variants.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\Variants\Misc-GlobalWarming.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\Variants\Misc-Miniature.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\Variants\Standard-Brawns-T0-5m.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\Variants\Standard-Brawns.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\Variants\Standard-T0.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\Variants\Standard.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\lang\en
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\lang\ru
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\ChessClient.dll
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\ChessClient.pdb
+C:\Users\devin\Open5DChess\ChessBot\bin\Release\ChessClient.dll.config
