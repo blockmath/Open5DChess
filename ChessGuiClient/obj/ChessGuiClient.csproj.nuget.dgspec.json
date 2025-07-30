@@ -13,6 +13,9 @@
         "frameworks": {
           "net472": {
             "projectReferences": {
+              "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj": {
+                "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj"
+              },
               "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj": {
                 "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj"
               }

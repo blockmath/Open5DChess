@@ -43,6 +43,10 @@
     <Compile Include="ChessBot.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ChessClient\ChessClient.csproj">
+      <Project>{a33e2f42-ed2e-4fec-95eb-181ee4357432}</Project>
+      <Name>ChessClient</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ChessCommon\ChessCommon.csproj">
       <Project>{d91a689a-a892-4e8c-9836-e1a44b787202}</Project>
       <Name>ChessCommon</Name>

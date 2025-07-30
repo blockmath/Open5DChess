@@ -1,0 +1,139 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0": {
+      "ChessBot/1.0.0": {
+        "type": "project",
+        "dependencies": {
+          "ChessCommon": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/ChessBot.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/ChessBot.dll": {}
+        }
+      },
+      "ChessClient/1.0.0": {
+        "type": "project",
+        "dependencies": {
+          "ChessCommon": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/ChessClient.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/ChessClient.dll": {}
+        }
+      },
+      "ChessCommon/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/ChessCommon.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/ChessCommon.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "ChessBot/1.0.0": {
+      "type": "project",
+      "path": "../ChessBot/ChessBot.csproj",
+      "msbuildProject": "../ChessBot/ChessBot.csproj"
+    },
+    "ChessClient/1.0.0": {
+      "type": "project",
+      "path": "../ChessClient/ChessClient.csproj",
+      "msbuildProject": "../ChessClient/ChessClient.csproj"
+    },
+    "ChessCommon/1.0.0": {
+      "type": "project",
+      "path": "../ChessCommon/ChessCommon.csproj",
+      "msbuildProject": "../ChessCommon/ChessCommon.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net8.0": [
+      "ChessBot >= 1.0.0",
+      "ChessClient >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\devin\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\ChessBotClient.csproj",
+      "projectName": "ChessBotClient",
+      "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\ChessBotClient.csproj",
+      "packagesPath": "C:\\Users\\devin\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\obj\\",
+      "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\devin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net8.0"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "projectReferences": {
+            "C:\\Users\\devin\\Open5DChess\\ChessBot\\ChessBot.csproj": {
+              "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessBot\\ChessBot.csproj"
+            },
+            "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj": {
+              "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.300"
+    },
+    "frameworks": {
+      "net8.0": {
+        "targetAlias": "net8.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

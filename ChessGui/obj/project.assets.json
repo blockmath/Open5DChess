@@ -198,6 +198,7 @@
       "ChessBot/1.0.0": {
         "type": "project",
         "dependencies": {
+          "ChessClient": "1.0.0",
           "ChessCommon": "1.0.0"
         },
         "compile": {
@@ -205,6 +206,18 @@
         },
         "runtime": {
           "bin/placeholder/ChessBot.dll": {}
+        }
+      },
+      "ChessClient/1.0.0": {
+        "type": "project",
+        "dependencies": {
+          "ChessCommon": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/ChessClient.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/ChessClient.dll": {}
         }
       },
       "ChessCommon/1.0.0": {
@@ -477,6 +490,11 @@
       "type": "project",
       "path": "../ChessBot/ChessBot.csproj",
       "msbuildProject": "../ChessBot/ChessBot.csproj"
+    },
+    "ChessClient/1.0.0": {
+      "type": "project",
+      "path": "../ChessClient/ChessClient.csproj",
+      "msbuildProject": "../ChessClient/ChessClient.csproj"
     },
     "ChessCommon/1.0.0": {
       "type": "project",

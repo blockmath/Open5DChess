@@ -1,0 +1,136 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\ChessBotClient.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\ChessBotClient.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\ChessBotClient.csproj",
+        "projectName": "ChessBotClient",
+        "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\ChessBotClient.csproj",
+        "packagesPath": "C:\\Users\\devin\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\devin\\Open5DChess\\ChessBotClient\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\devin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Users\\devin\\Open5DChess\\ChessBot\\ChessBot.csproj": {
+                "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessBot\\ChessBot.csproj"
+              },
+              "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj": {
+                "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\devin\\Open5DChess\\ChessBot\\ChessBot.csproj": {
+      "restore": {
+        "projectUniqueName": "C:\\Users\\devin\\Open5DChess\\ChessBot\\ChessBot.csproj",
+        "projectName": "ChessBot",
+        "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessBot\\ChessBot.csproj",
+        "UsingMicrosoftNETSdk": false,
+        "frameworks": {
+          "net472": {
+            "projectReferences": {
+              "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj": {
+                "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj"
+              }
+            }
+          }
+        }
+      },
+      "frameworks": {
+        "net472": {}
+      }
+    },
+    "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj": {
+      "restore": {
+        "projectUniqueName": "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj",
+        "projectName": "ChessClient",
+        "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessClient\\ChessClient.csproj",
+        "UsingMicrosoftNETSdk": false,
+        "frameworks": {
+          "net472": {
+            "projectReferences": {
+              "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj": {
+                "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj"
+              }
+            }
+          }
+        }
+      },
+      "frameworks": {
+        "net472": {}
+      }
+    },
+    "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj": {
+      "restore": {
+        "projectUniqueName": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj",
+        "projectName": "ChessCommon",
+        "projectPath": "C:\\Users\\devin\\Open5DChess\\ChessCommon\\ChessCommon.csproj",
+        "UsingMicrosoftNETSdk": false,
+        "frameworks": {
+          "net472": {
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "net472": {}
+      }
+    }
+  }
+}

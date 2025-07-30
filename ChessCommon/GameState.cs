@@ -348,7 +348,7 @@ namespace ChessCommon {
                 Vector2i XY = new Vector2i(xystr, boundsInfo);
 
                 if (mstr2[0] == '>') {
-                    Match mstrmatch2 = Regex.Match(mstr2, "^>+\\((.*?)\\)([A-Z]?[a-i][1-9])$");
+                    Match mstrmatch2 = Regex.Match(mstr2, "^>+x?\\((.*?)\\)([A-Z]?[a-i][1-9])$");
 
                     tlstr2 = mstrmatch2.Groups[1].Value;
                     xystr2 = mstrmatch2.Groups[2].Value;
@@ -1412,7 +1412,8 @@ namespace ChessCommon {
 
         public void SubmitMoves(ColourRights rights = ColourRights.BOTH) {
             if (!CanSubmitMoves()) {
-                throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
+                //throw new InvalidOperationException("Attempted to submit moves when the Present did not change colour");
+                return;
             }
 
             if (!rights.hasRights(activePlayer)) {

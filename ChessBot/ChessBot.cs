@@ -24,10 +24,14 @@ namespace ChessBot {
     /// Consider caching decisions so that you don't have to redo an entire search just to make two moves.
     /// Don't worry, your instance will persist for the entire game.
     /// 
+    /// Consider putting relevant debug information (like a rolling evaluation) in `ConsoleText`.
+    /// 
     /// </summary>
 
 
     public class ChessBot {
+        public string ConsoleText = "";
+
         public ChessBot() { }
 
         public void SubmitMoves() => throw new CommandSubmitMoves();

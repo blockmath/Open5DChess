@@ -28,10 +28,12 @@ namespace ChessGuiClient {
 
         static Rectangle JoinWhiteRect = new Rectangle(-115, -40, 250, 50);
         static Rectangle JoinBlackRect = new Rectangle(-115, 20, 250, 50);
+        static Rectangle JoinSpectatorRect = new Rectangle(-115, 80, 250, 50);
 
 
         bool JoinWhiteHovered = false;
         bool JoinBlackHovered = false;
+        bool JoinSpectatorHovered = false;
         bool IpRectHovered = false;
         bool PasswordRectHovered = false;
 
@@ -117,6 +119,7 @@ namespace ChessGuiClient {
 
                 JoinWhiteHovered = JoinWhiteRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
                 JoinBlackHovered = JoinBlackRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
+                JoinSpectatorHovered = JoinSpectatorRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
                 IpRectHovered = IPRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
                 PasswordRectHovered = PasswordRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
 
@@ -134,6 +137,9 @@ namespace ChessGuiClient {
                         Connect();
                     } else if (JoinBlackHovered) {
                         colour = GameColour.BLACK;
+                        Connect();
+                    } else if (JoinSpectatorHovered) {
+                        colour = GameColour.NONE;
                         Connect();
                     } else if (IpRectHovered) {
                         RegisterIpInput();
@@ -221,6 +227,17 @@ namespace ChessGuiClient {
                 } else {
                     Vector2 black_join_bounds = text_font.MeasureString(BLACK_JOIN_STR);
                     renderer.spriteBatch.DrawString(text_font, BLACK_JOIN_STR, JoinBlackRect.Center.ToVector2() + black_join_bounds / -2 + new Vector2(0, -2.5f), Color.White);
+                }
+
+                renderer.spriteBatch.Draw(renderer.sq, JoinSpectatorRect, JoinSpectatorHovered ? GameStateRenderer.TIME_COLOUR_LIGHT : Color.DarkGray);
+                string SPECTATOR_JOIN_STR = TextLocalizer.Get("join_as_spectator");
+                bool show_throbber_spectator = isConnecting && colour.isNone();
+
+                if (show_throbber_spectator) {
+                    DrawThrobber(renderer.spriteBatch, renderer.circle, JoinSpectatorRect.Center.ToVector2() - new Vector2(3.75f, 3.75f), new Color(48, 48, 48), (int)(gameTime.TotalGameTime.TotalSeconds * 8));
+                } else {
+                    Vector2 spectator_join_bounds = text_font.MeasureString(SPECTATOR_JOIN_STR);
+                    renderer.spriteBatch.DrawString(text_font, SPECTATOR_JOIN_STR, JoinSpectatorRect.Center.ToVector2() + spectator_join_bounds / -2 + new Vector2(0, -2.5f), Color.Black);
                 }
 
                 renderer.spriteBatch.End();

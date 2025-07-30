@@ -1,0 +1,3 @@
+Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
+"C:/Users/devin/Open5DChess/ChessGuiBot/Content/circle.png","C:/Users/devin/Open5DChess/ChessGuiBot/Content/bin/DesktopGL/circle.xnb","TextureProcessor","Texture2DContent",20920,4194389,0.2023199
+"C:/Users/devin/Open5DChess/ChessGuiBot/Content/sq.png","C:/Users/devin/Open5DChess/ChessGuiBot/Content/bin/DesktopGL/sq.xnb","TextureProcessor","Texture2DContent",72,89,0.0013672

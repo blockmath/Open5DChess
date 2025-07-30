@@ -16,35 +16,37 @@ namespace ChessBot {
         bool IsThinking();
         Move GetMove();
         ChessBot GetBotInstance();
+
+        string GetConsoleText();
     }
 
 
     public class BotInterface<T> : BotInterface where T : ChessBot, new() {
         private ChessBot bot;
-        private GameState gameState;
+        private ChessClient.ChessClient client;
+
+        private GameColour colour;
 
         private Move chosenMove;
         private Thread botThread;
 
-        public BotInterface(GameState gameState) {
+        public BotInterface(ChessClient.ChessClient client, GameColour colour) {
             bot = new T();
-            this.gameState = gameState;
+            this.client = client;
+            this.colour = colour;
         }
 
 
         private void Think() {
-            GameState copiedState;
-
-            lock (gameState) {
-                copiedState = gameState.Clone();
-            }
 
             try {
-                Move move = bot.Think(copiedState, gameState.timerView);
-                chosenMove = move;
+                Move move = bot.Think(client.personalState, client.personalState.timerView);
+                client.personalState.MakeMoveValidated(move, colour.GetRights());
+                client.SendCommand(new ChessCommand(CommandType.MOVE, colour, move: move));
             } catch (CommandSubmitMoves) {
-                lock (gameState) {
-                    gameState.SubmitMoves();
+                if (client.personalState.CanSubmitMoves()) {
+                    client.personalState.SubmitMoves();
+                    client.SendCommand(new ChessCommand(CommandType.SUBMIT, colour));
                 }
             }
         }
@@ -65,5 +67,7 @@ namespace ChessBot {
         public Move GetMove() => chosenMove;
 
         public ChessBot GetBotInstance() => bot;
+
+        public string GetConsoleText() => bot.ConsoleText;
     }
 }

@@ -104,8 +104,8 @@ namespace ChessClient {
                 response = "<|ERR|>";
             }
             if (socket != null) {
-                Debug.WriteLine("CLIENT: RESP => " + response.Replace("\n", "\\n"));
-                socket.Send(Encoding.UTF8.GetBytes(response));
+                /*Debug.WriteLine("CLIENT: RESP => " + response.Replace("\n", "\\n"));
+                socket.Send(Encoding.UTF8.GetBytes(response));*/
             }
         }
 

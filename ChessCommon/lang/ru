@@ -1,6 +1,7 @@
 ﻿the_present "современность"
 join_as_white "Играйте за белых"
 join_as_black "Играйте за черных"
+join_as_spectator "Наблюдение"
 white_abbr "Б: "
 black_abbr "ч: "
 undo_move "Отмена ходов"
@@ -29,3 +30,4 @@ server_incorrect_password "В подключении отказано. (Непр
 server_player_already_joined "В подключении отказано. (Игрок уже присоединился)"
 start_server "Стартовый сервер"
 instance "Пример: "
+invalid_bot_class "Не удается найти класс "

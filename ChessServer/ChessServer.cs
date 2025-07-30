@@ -77,7 +77,7 @@ namespace ChessServer {
                     server.passcode = command.code;
                     server.RecieveCommand(command, socket);
                     server.OnSocketConnection(socket);
-                    await Task.Delay(10);
+                    await Task.Delay(1);
                     server.SendPgn(socket);
                 }
             }
@@ -256,8 +256,10 @@ namespace ChessServer {
                 response = "<|ERR|>";
             }
 
+            /*
             Debug.WriteLine("SERVER: RESP => " + response.Replace("\n", "\\n"));
             socket.Send(Encoding.UTF8.GetBytes(response));
+            */
 
             if (data[1] == ':') {
                 // Command

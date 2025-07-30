@@ -198,6 +198,7 @@
       "ChessBot/1.0.0": {
         "type": "project",
         "dependencies": {
+          "ChessClient": "1.0.0",
           "ChessCommon": "1.0.0"
         },
         "compile": {
