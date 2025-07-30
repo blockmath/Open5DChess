@@ -28,7 +28,7 @@ namespace ChessCommon {
         public long us_white;
         public long us_black;
 
-        public long us_turn_started { get; private set; }
+        public long us_turn_started;
 
         public long us_increment { get; private set; }
 

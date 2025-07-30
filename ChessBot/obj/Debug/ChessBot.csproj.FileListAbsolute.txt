@@ -30,3 +30,4 @@ C:\Users\devin\Open5DChess\ChessBot\bin\Debug\Variants\Standard-Brawns.txt
 C:\Users\devin\Open5DChess\ChessBot\bin\Debug\lang\en
 C:\Users\devin\Open5DChess\ChessBot\bin\Debug\lang\ru
 C:\Users\devin\Open5DChess\ChessBot\bin\Debug\options.txt
+C:\Users\devin\Open5DChess\ChessBot\bin\Debug\Variants\Standard-Brawns-T0-5m.txt

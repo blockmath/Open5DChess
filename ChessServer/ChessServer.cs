@@ -12,6 +12,94 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace ChessServer {
+
+    public class ChessMultiServer {
+        public EndPoint serverEndpoint;
+
+        public Socket listener;
+
+        public Dictionary<int, ChessServer> instances = new Dictionary<int, ChessServer>();
+        
+
+        public void ServerStart(EndPoint serverEndpoint) {
+            this.serverEndpoint = serverEndpoint;
+            listener = new Socket(serverEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            listener.Bind(serverEndpoint);
+            listener.Listen(1000);
+
+            ServerListen();
+        }
+
+        public async Task AwaitClose() {
+            while (listener != null) {
+                await Task.Delay(1000);
+            }
+        }
+
+        public void ServerStop() {
+            foreach (ChessServer server in instances.Values) {
+                server.ServerStop();
+            }
+            instances.Clear();
+            listener.Close();
+            listener = null;
+        }
+
+        private async void ServerListen() {
+            while (listener != null) {
+                OnSocketConnection(await listener.AcceptAsync());
+                QueryServerActiveness();
+            }
+        }
+
+        public void OnSocketConnection(Socket socket) {
+            SocketListen(socket);
+        }
+
+        private async void SocketListen(Socket socket) {
+            byte[] buffer = new byte[4096];
+            int recieved = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+            string data = Encoding.UTF8.GetString(buffer, 0, recieved);
+            ChessCommand command = ChessCommand.Deserialize(data);
+            if (command.type == CommandType.REQUEST_CONNECTION) {
+                int iid = ChessCommand.PortFromPassCode(command.code);
+                if (instances.ContainsKey(iid)) {
+                    // Connecting to existing instance
+                    ChessServer server = instances[iid];
+                    server.RecieveCommand(command, socket);
+                    server.OnSocketConnection(socket);
+                } else {
+                    // Create a new instance
+                    ChessServer server = new ChessServer();
+                    server.gameState = new GameState(OptionsLoader.Get("server_pgn"));
+                    instances.Add(iid, server);
+                    server.passcode = command.code;
+                    server.RecieveCommand(command, socket);
+                    server.OnSocketConnection(socket);
+                    await Task.Delay(10);
+                    server.SendPgn(socket);
+                }
+            }
+        }
+
+        public void QueryServerActiveness() {
+            List<int> instanceStopQueue = new List<int>();
+            foreach (KeyValuePair<int, ChessServer> server in instances) {
+                server.Value.TimerUpdate();
+                if (!server.Value.IsServerRecentlyActive()) {
+                    server.Value.ServerStop();
+                    instanceStopQueue.Add(server.Key);
+                }
+            }
+            foreach (int serverID in instanceStopQueue) {
+                instances.Remove(serverID);
+            }
+        }
+    }
+
+
+
     public class ChessServer {
 
         public EndPoint serverEndpoint;
@@ -21,11 +109,30 @@ namespace ChessServer {
 
         public List<Socket> clients = new List<Socket>();
 
-        private Socket whiteSocket;
-        private Socket blackSocket;
+        private Socket whiteSocket = null;
+        private Socket blackSocket = null;
 
+        public ulong passcode;
 
         public GameState gameState;
+
+        private Stopwatch sw;
+
+        public bool IsServerRecentlyActive() {
+            bool serverCurrentlyActive = IsColourConnected(GameColour.WHITE) || IsColourConnected(GameColour.BLACK);
+
+            if (serverCurrentlyActive) {
+                sw = Stopwatch.StartNew();
+            } else {
+                if (sw.Elapsed.TotalSeconds > double.Parse(OptionsLoader.Get("server_timeout"))) {
+                    return false;
+                }
+            }
+
+            return true;
+
+        }
+
 
         public void ServerStart(EndPoint serverEndpoint) {
             this.serverEndpoint = serverEndpoint;
@@ -45,8 +152,10 @@ namespace ChessServer {
 
         public void ServerStop() {
             BroadcastCommand(new ChessCommand(CommandType.SERVER_CLOSED, GameColour.NONE));
-            listener.Close();
-            listener = null;
+            if (listener != null) {
+                listener.Close();
+                listener = null;
+            }
 
             foreach (Socket socket in clients) {
                 socket.Shutdown(SocketShutdown.Both);
@@ -63,18 +172,20 @@ namespace ChessServer {
         }
 
         private async void SocketListen(Socket socket) {
-            byte[] buffer = new byte[65536];
+            byte[] buffer = new byte[4096];
             while (clients.Contains(socket)) {
                 try {
                     int recieved = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
                     string data = Encoding.UTF8.GetString(buffer, 0, recieved);
                     if (data[0] == '<') {
-                        Debug.WriteLine("SERVER: RESP <= " + data);
+                        Debug.WriteLine("SERVER: RESP <= " + data.Replace("\n", "\\n"));
                     } else {
-                        Debug.WriteLine("SERVER: RECV <= " + data);
+                        Debug.WriteLine("SERVER: RECV <= " + data.Replace("\n", "\\n"));
                         RecieveData(data, socket);
                     }
                 } catch (SocketException) {
+                    clients.Remove(socket);
+                } catch (IndexOutOfRangeException) {
                     clients.Remove(socket);
                 }
             }
@@ -91,7 +202,7 @@ namespace ChessServer {
         public void RecieveCommand(ChessCommand command, Socket socket) {
             switch (command.type) {
                 case CommandType.MOVE:
-                    if (gameState.MakeMoveValidated(command.move, GetSocketRights(socket))) {
+                     if (gameState.MakeMoveValidated(command.move, GetSocketRights(socket))) {
                         BroadcastCommand(command);
                     }
                     break;
@@ -109,15 +220,23 @@ namespace ChessServer {
                     if (blackSocket == socket) blackSocket = null;
                     break;
                 case CommandType.REQUEST_CONNECTION:
-                    if (command.colour.isNone()) {
-                        // Don't need to do anything special
-                    } else if (command.colour.isWhite()) {
-                        if (whiteSocket is null || !whiteSocket.Connected) {
-                            whiteSocket = socket;
-                        }
-                    } else if (command.colour.isBlack()) {
-                        if (blackSocket is null || !blackSocket.Connected) {
-                            blackSocket = socket;
+                    if (command.code != passcode) {
+                        SendCommand(new ChessCommand(CommandType.PASSWORD_INCORRECT), socket);
+                    } else {
+                        if (command.colour.isNone()) {
+                            // Don't need to do anything special
+                        } else if (command.colour.isWhite()) {
+                            if (whiteSocket is null || !whiteSocket.Connected) {
+                                whiteSocket = socket;
+                            } else {
+                                SendCommand(new ChessCommand(CommandType.PLAYER_ALREADY_JOINED), socket);
+                            }
+                        } else if (command.colour.isBlack()) {
+                            if (blackSocket is null || !blackSocket.Connected) {
+                                blackSocket = socket;
+                            } else {
+                                SendCommand(new ChessCommand(CommandType.PLAYER_ALREADY_JOINED), socket);
+                            }
                         }
                     }
                     break;
@@ -137,7 +256,7 @@ namespace ChessServer {
                 response = "<|ERR|>";
             }
 
-            Debug.WriteLine("SERVER: RESP => " + response);
+            Debug.WriteLine("SERVER: RESP => " + response.Replace("\n", "\\n"));
             socket.Send(Encoding.UTF8.GetBytes(response));
 
             if (data[1] == ':') {
@@ -155,16 +274,19 @@ namespace ChessServer {
             }
 
             if (shouldSendPgn) {
-                string pgn = "";
-
-                lock (gameState) {
-                    pgn = gameState.GetPgn();
-                }
-
-                SendPgn(pgn, socket);
+                SendPgn(socket);
             }
         }
 
+        public void SendPgn(Socket socket) {
+            string pgn = "";
+
+            lock (gameState) {
+                pgn = gameState.GetPgn();
+            }
+
+            SendPgn(pgn, socket);
+        }
 
 
         public bool SendCommand(ChessCommand command, Socket socket) {
@@ -180,7 +302,7 @@ namespace ChessServer {
         }
 
         public bool SendData(string data, Socket socket) {
-            Debug.WriteLine("SERVER: SEND => " + data);
+            Debug.WriteLine("SERVER: SEND => " + data.Replace("\n", "\\n"));
             socket.Send(Encoding.UTF8.GetBytes(data));
 
             return true;
@@ -215,6 +337,12 @@ namespace ChessServer {
             }
         }
 
+        Stopwatch deltaTimeMeasurer = new Stopwatch();
+        public void TimerUpdate() {
+            if (gameState.timer != null) {
+                gameState.timer.Tick((long)(deltaTimeMeasurer.Elapsed.TotalMilliseconds * 1000));
+            }
+        }
 
     }
 }

@@ -19,18 +19,22 @@ namespace ChessClient {
 
         public GameState personalState = new GameState();
 
-        public bool Connect(EndPoint serverEndpoint, GameColour asColour) {
+        public ulong passcode;
+
+        public string DisconnectReason = "server_disconnected";
+
+        public async Task<bool> Connect(EndPoint serverEndpoint, GameColour asColour) {
             this.serverEndpoint = serverEndpoint;
             socket = new Socket(serverEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             try {
-                socket.Connect(serverEndpoint);
+                await socket.ConnectAsync(serverEndpoint);
             } catch (SocketException) {
                 return false;
             }
 
 
-            SendCommand(new ChessCommand(CommandType.REQUEST_CONNECTION, asColour));
+            SendCommand(new ChessCommand(CommandType.REQUEST_CONNECTION, asColour, passcode));
 
             SendCommand(new ChessCommand(CommandType.REQUEST_PGN));
 
@@ -61,9 +65,9 @@ namespace ChessClient {
                 string data = Encoding.UTF8.GetString(buffer, 0, recieved);
                 if (data[0] == '<') {
                     // Response
-                    Debug.WriteLine("CLIENT: RESP <= " + data);
+                    Debug.WriteLine("CLIENT: RESP <= " + data.Replace("\n", "\\n"));
                 } else {
-                    Debug.WriteLine("CLIENT: RECV <= " + data);
+                    Debug.WriteLine("CLIENT: RECV <= " + data.Replace("\n", "\\n"));
                     RecieveData(data);
                 }
             }
@@ -75,7 +79,7 @@ namespace ChessClient {
         }
 
         public bool SendData(string data) {
-            Debug.WriteLine("CLIENT: SEND => " + data);
+            Debug.WriteLine("CLIENT: SEND => " + data.Replace("\n", "\\n"));
             socket.Send(Encoding.UTF8.GetBytes(data));
 
             return true;
@@ -99,8 +103,10 @@ namespace ChessClient {
             } else {
                 response = "<|ERR|>";
             }
-            Debug.WriteLine("CLIENT: RESP => " + response);
-            socket.Send(Encoding.UTF8.GetBytes(response));
+            if (socket != null) {
+                Debug.WriteLine("CLIENT: RESP => " + response.Replace("\n", "\\n"));
+                socket.Send(Encoding.UTF8.GetBytes(response));
+            }
         }
 
         private CommandType JustSentCommand = CommandType.NONE;
@@ -123,6 +129,20 @@ namespace ChessClient {
                 case CommandType.PLAYERTIMEOUT:
                     if (command.colour.isWhite()) personalState.timer.us_white = -1;
                     if (command.colour.isBlack()) personalState.timer.us_black = -1;
+                    break;
+                case CommandType.PASSWORD_INCORRECT:
+                    DisconnectReason = "server_incorrect_password";
+                    goto Disconnected;
+                case CommandType.PLAYER_ALREADY_JOINED:
+                    DisconnectReason = "server_player_already_joined";
+                    goto Disconnected;
+                case CommandType.DISCONNECT:
+                    DisconnectReason = "server_disconnected";
+                Disconnected:
+                    socket.Shutdown(SocketShutdown.Both);
+                    socket.Close();
+                    socket.Dispose();
+                    socket = null;
                     break;
             }
         }

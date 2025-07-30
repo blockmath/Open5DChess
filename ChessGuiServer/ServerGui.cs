@@ -4,7 +4,6 @@ using FontStashSharp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-//using System.Drawing;
 using System.Net;
 
 
@@ -15,19 +14,27 @@ namespace ChessGuiServer {
 
         public IPEndPoint endPoint;
 
-        string ipstr;
+        string password = "";
 
         private bool serverStarted = false;
 
 
+        SpriteFontBase monospace_font;
 
-        static Rectangle IPRect = new Rectangle(-15, -80, 150, 32);
+        // static Rectangle IPRect = new Rectangle(-15, -120, 150, 32);
+        static Rectangle PasswordRect = new Rectangle(-115, -80, 250, 32);
         static Rectangle StartServerRect = new Rectangle(-115, -40, 250, 50);
 
         bool StartServerHovered = false;
-        bool IpRectHovered = false;
+        // bool IpRectHovered = false;
+        bool PasswordRectHovered = false;
 
-        bool IpFieldOpen = false;
+        // bool IpFieldOpen = false;
+        bool PasswordFieldOpen = false;
+
+        // bool ipFieldFull = false;
+        bool passwordFieldFull = false;
+
 
         protected override void Initialize() {
             base.Initialize();
@@ -37,8 +44,6 @@ namespace ChessGuiServer {
             server.gameState = renderer.gameState;
 
             renderer.ShouldDrawControlButtons = false;
-
-            ipstr = OptionsLoader.Get("server_port");
         }
 
         protected override void Update(GameTime gameTime) {
@@ -46,19 +51,25 @@ namespace ChessGuiServer {
                 base.Update(gameTime);
             } else {
                 StartServerHovered = StartServerRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
-                IpRectHovered = IPRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
+                PasswordRectHovered = PasswordRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
+                // IpRectHovered = IPRect.Contains(Vector2.Transform(Mouse.GetState().Position.ToVector2(), Matrix.Invert(WindowCentreMatrix)));
 
-                if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
-                    if (!IpRectHovered) {
+                if (Mouse.GetState().LeftButton == ButtonState.Pressed && MouseWasntPressed) {
+                    /*if (!IpRectHovered) {
                         UnregisterIpInput();
+                    }*/
+                    if (!PasswordRectHovered) {
+                        UnregisterPasswordInput();
                     }
 
                     if (StartServerHovered) {
                         StartServer();
-                    } else if (IpRectHovered) {
-                        RegisterIpInput();
+                    } else if (PasswordRectHovered) {
+                        RegisterPasswordInput();
                     }
                 }
+
+                MouseWasntPressed = !(Mouse.GetState().LeftButton == ButtonState.Pressed);
 
                 base.BaseUpdate(gameTime);
             }
@@ -67,7 +78,7 @@ namespace ChessGuiServer {
         protected override void Draw(GameTime gameTime) {
 
             if (serverStarted) {
-                renderer.infoText = TextLocalizer.Get("port") + " " + endPoint.Port + "\n" + TextLocalizer.Get("white_player") + TextLocalizer.Get(server.IsColourConnected(GameColour.WHITE) ? "connected" : "not_connected") + "\n" + TextLocalizer.Get("black_player") + TextLocalizer.Get(server.IsColourConnected(GameColour.BLACK) ? "connected" : "not_connected");
+                renderer.infoText = TextLocalizer.Get("instance") + " " + ChessCommand.PortFromPassCode(server.passcode) + "\n" + TextLocalizer.Get("white_player") + TextLocalizer.Get(server.IsColourConnected(GameColour.WHITE) ? "connected" : "not_connected") + "\n" + TextLocalizer.Get("black_player") + TextLocalizer.Get(server.IsColourConnected(GameColour.BLACK) ? "connected" : "not_connected");
 
                 if (!server.gameState.playerHasLost.hasNone()) {
                     if (server.gameState.playerHasLost.hasBoth()) {
@@ -98,17 +109,24 @@ namespace ChessGuiServer {
                     transformMatrix: WindowCentreMatrix
                 );
 
-                SpriteFontBase monospace_font = renderer.clockFontSystem.GetFont(24);
-
-                renderer.spriteBatch.Draw(renderer.sq, IPRect, IpRectHovered ? new Color(64, 64, 64) : new Color(32, 32, 32));
-                string ipDispStr = ipstr + (IpFieldOpen && ((int)(gameTime.TotalGameTime.TotalSeconds * 2) % 2 == 0) ? "_" : "");
-                renderer.spriteBatch.DrawString(monospace_font, ipDispStr, new Vector2(IPRect.Left, IPRect.Center.Y) + new Vector2(9, -13f), Color.White);
+                monospace_font = renderer.clockFontSystem.GetFont(24);
 
                 SpriteFontBase text_font = renderer.fontSystem.GetFont(42);
 
+                /*
+                renderer.spriteBatch.Draw(renderer.sq, IPRect, IpRectHovered ? new Color(64, 64, 64) : new Color(32, 32, 32));
+                string ipDispStr = ipstr + (IpFieldOpen && ((int)(gameTime.TotalGameTime.TotalSeconds * 2) % 2 == 0) ? (ipFieldFull ? "|" : "_") : "");
+                renderer.spriteBatch.DrawString(monospace_font, ipDispStr, new Vector2(IPRect.Left, IPRect.Center.Y) + new Vector2(9, -13f), Color.White);
+                
                 string port_str = TextLocalizer.Get("port");
                 Vector2 portStrBounds = text_font.MeasureString(port_str);
                 renderer.spriteBatch.DrawString(text_font, port_str, new Vector2(IPRect.Left - (portStrBounds.X + 9), IPRect.Center.Y - portStrBounds.Y / 2 - 5), Color.Black);
+                */
+
+                renderer.spriteBatch.Draw(renderer.sq, PasswordRect, PasswordRectHovered ? new Color(64, 64, 64) : new Color(32, 32, 32));
+                string pwDispStr = password + (PasswordFieldOpen && ((int)(gameTime.TotalGameTime.TotalSeconds * 2) % 2 == 0) ? (passwordFieldFull ? "|" : "_") : "");
+                renderer.spriteBatch.DrawString(monospace_font, pwDispStr, new Vector2(PasswordRect.Left, PasswordRect.Center.Y) + new Vector2(9, -13f), Color.White);
+
 
 
                 renderer.spriteBatch.Draw(renderer.sq, StartServerRect, StartServerHovered ? GameStateRenderer.TIME_COLOUR_LIGHT : Color.AntiqueWhite);
@@ -143,36 +161,43 @@ namespace ChessGuiServer {
             
         }
 
-        public void OnInput(object sender, TextInputEventArgs e) {
+        public void OnInputPasswordField(object sender, TextInputEventArgs e) {
             Keys key = e.Key;
             char c = e.Character;
 
             if (key == Keys.Enter) {
-                UnregisterIpInput();
+                UnregisterPasswordInput();
             } else if (key == Keys.Delete || key == Keys.Back) {
-                ipstr = ipstr.Substring(0, ipstr.Length - 1);
+                if (password.Length > 0) {
+                    password = password.Substring(0, password.Length - 1);
+                }
+                passwordFieldFull = false;
             } else {
-                ipstr += c;
+                password += c;
+                if (monospace_font.MeasureString(password).X + 10 > PasswordRect.Width) {
+                    password = password.Substring(0, password.Length - 1);
+                    passwordFieldFull = true;
+                }
             }
         }
 
-
-        public void RegisterIpInput() {
-            if (!IpFieldOpen) {
-                IpFieldOpen = true;
-                Window.TextInput += OnInput;
+        public void RegisterPasswordInput() {
+            if (!PasswordFieldOpen) {
+                PasswordFieldOpen = true;
+                Window.TextInput += OnInputPasswordField;
             }
         }
 
-        public void UnregisterIpInput() {
-            if (IpFieldOpen) {
-                IpFieldOpen = false;
-                Window.TextInput -= OnInput;
+        public void UnregisterPasswordInput() {
+            if (PasswordFieldOpen) {
+                PasswordFieldOpen = false;
+                Window.TextInput -= OnInputPasswordField;
             }
         }
 
         public void StartServer() {
-            endPoint = new IPEndPoint(IPAddress.Loopback, int.Parse(ipstr));
+            server.passcode = ChessCommand.CodeFromPassCode(password);
+            endPoint = new IPEndPoint(IPAddress.Any, 0x5DC);
             server.ServerStart(endPoint);
             serverStarted = true;
         }

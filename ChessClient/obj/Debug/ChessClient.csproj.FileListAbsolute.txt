@@ -18,3 +18,4 @@ C:\Users\devin\Open5DChess\ChessClient\obj\Debug\ChessClient.pdb
 C:\Users\devin\Open5DChess\ChessClient\bin\Debug\options.txt
 C:\Users\devin\Open5DChess\ChessClient\bin\Debug\lang\en
 C:\Users\devin\Open5DChess\ChessClient\bin\Debug\lang\ru
+C:\Users\devin\Open5DChess\ChessClient\bin\Debug\Variants\Standard-Brawns-T0-5m.txt

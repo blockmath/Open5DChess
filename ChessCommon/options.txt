@@ -1,2 +1,3 @@
 ﻿locale ""
-server_port "1500"
+server_timeout "300"
+server_pgn "standard_brawns_t0_5m"

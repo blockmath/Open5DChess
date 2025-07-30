@@ -78,10 +78,10 @@ namespace ChessCommon {
         }
 
 
-        public GameState() {
-            LoadPgn("standard_brawns");
-            //LoadPgn("misc_mini");
-            //LoadPgn("misc_globalwarming");
+        public GameState() : this("standard") { }
+
+        public GameState(string pgn) {
+            LoadPgn(pgn);
             activePlayer = GetPresentColour();
         }
 
@@ -198,6 +198,12 @@ namespace ChessCommon {
                         case "TimeControls":
                             Match timeMatch = Regex.Match(slin[1].Trim('"'), "(\\d+)\\+(\\d+)");
                             timer = new Timer(long.Parse(timeMatch.Groups[1].Value) * 60_000_000L, long.Parse(timeMatch.Groups[2].Value) * 1_000_000L);
+                            break;
+                        case "TimeClocks":
+                            Match clocksMatch = Regex.Match(slin[1].Trim('"'), "(\\d+),(\\d+),(\\d+)");
+                            timer.us_white = long.Parse(clocksMatch.Groups[1].Value);
+                            timer.us_black = long.Parse(clocksMatch.Groups[2].Value);
+                            timer.us_turn_started = long.Parse(clocksMatch.Groups[3].Value);
                             break;
                         case "Size":
                             Match sizeMatch = Regex.Match(slin[1].Trim('"'), "(\\d+)x(\\d+)");
@@ -408,7 +414,13 @@ namespace ChessCommon {
         }
 
         public string GetPgn() {
-            string pgn = GetPgnMetadata(initialPgn) + "\n[Active " + (activePlayer.ToString()) + "]";
+            string pgn = GetPgnMetadata(initialPgn);
+
+            if (timer != null) {
+                pgn += "\n[TimeClocks " + timer.us_white + "," + timer.us_black + "," + timer.us_turn_started + "]";
+            }
+
+            pgn += "\n[Active " + (activePlayer.ToString()) + "]";
 
             Vector1iTL mt = new Vector1iTL(1, GameColour.WHITE);
 

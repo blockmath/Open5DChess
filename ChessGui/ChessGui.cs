@@ -14,6 +14,9 @@ namespace ChessGui {
 
         protected Matrix WindowCentreMatrix => Matrix.CreateTranslation(new Vector3(Window.ClientBounds.Size.ToVector2() / 2, 0));
 
+
+        public bool MouseWasntPressed = true;
+
         public ChessGui() {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";

@@ -486,7 +486,7 @@ namespace ChessGui {
                 for (int l = gameState.GetMinTL() - ws_overscan; l <= gameState.GetMaxTL() + ws_overscan; ++l) {
                     Rectangle target = new Rectangle(
                         (int)((2 * t) * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) - PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X) / 2),
-                        (int)(l * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) / 2),
+                        (int)(l * (perspective.isBlack() ? -1 : 1) * PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) - PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y) / 2),
                         (int)(2 * PIECE_SIZE.X * (BOARD_SIZE.X + BOARD_OFFSET.X)),
                         (int)(PIECE_SIZE.Y * (BOARD_SIZE.Y + BOARD_OFFSET.Y))
                     );
@@ -497,13 +497,14 @@ namespace ChessGui {
                     spriteBatch.Draw(sq, target, colourA);
 
                     if (t == gameState.GetMaxT5() && l >= gameState.GetMinTL() - 1 && l <= gameState.GetMaxTL() + 1) {
-                        string lString = (l * (perspective.isBlack() ? -1 : 1)).ToString("+#;-#;0") + "L ";
+                        string lString = l.ToString("+#;-#;0") + "L ";
                         Vector2 strSize = gridFont.MeasureString(lString);
 
                         spriteBatch.DrawString(gridFont, lString, new Vector2(target.Right - strSize.X, target.Center.Y - strSize.Y / 2), colourB);
                     }
 
-                    if (l == gameState.GetMaxTL() + 1 && t >= gameState.GetMinT() && t <= gameState.GetMaxT5()) {
+                    if ((l == gameState.GetMaxTL() + 1 && t >= gameState.GetMinT() && t <= gameState.GetMaxT5() && !perspective.isBlack()) ||
+                        (l == gameState.GetMinTL() - 1 && t >= gameState.GetMinT() && t <= gameState.GetMaxT5() && perspective.isBlack())) {
                         string tString = "T" + t.ToString();
                         Vector2 strSize = gridFont.MeasureString(tString);
 
@@ -754,8 +755,11 @@ namespace ChessGui {
 
 
         public void Update(GameTime gameTime) {
+            if (gameState.timer != null) {
+                gameState.timer.Tick((long)gameTime.ElapsedGameTime.TotalMicroseconds);
+            }
 
-            if (Mouse.GetState().LeftButton == ButtonState.Pressed) {
+            if (Mouse.GetState().LeftButton == ButtonState.Pressed && parent.MouseWasntPressed) {
                 if (submitHovered) {
                     if (Winners.hasNone() && SubmitIsAllowed) {
                         parent.SubmitMoves();
@@ -769,7 +773,7 @@ namespace ChessGui {
                 }
             }
 
-
+            parent.MouseWasntPressed = !(Mouse.GetState().LeftButton == ButtonState.Pressed);
 
 
             Vector3 mouse_position = new Vector3(Mouse.GetState().X, Mouse.GetState().Y, Mouse.GetState().ScrollWheelValue);

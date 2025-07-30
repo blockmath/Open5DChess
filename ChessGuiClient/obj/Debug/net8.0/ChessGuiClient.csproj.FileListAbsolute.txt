@@ -68,3 +68,4 @@ C:\Users\devin\Open5DChess\ChessGuiClient\obj\Debug\net8.0\ref\ChessGuiClient.dl
 C:\Users\devin\Open5DChess\ChessGuiClient\bin\Debug\net8.0\options.txt
 C:\Users\devin\Open5DChess\ChessGuiClient\bin\Debug\net8.0\lang\en
 C:\Users\devin\Open5DChess\ChessGuiClient\bin\Debug\net8.0\lang\ru
+C:\Users\devin\Open5DChess\ChessGuiClient\bin\Debug\net8.0\Variants\Standard-Brawns-T0-5m.txt
